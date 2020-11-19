@@ -26,9 +26,6 @@ def main(cfg : DictConfig) -> None:
     # set callback
 
     # set data
-    #dataset = CIFAR10(to_absolute_path('data'), train=True, download=True, transform=transforms.ToTensor())
-    #mnist_test = CIFAR10(to_absolute_path('data'), train=False, download=True, transform=transforms.ToTensor())
-    #mnist_train, mnist_val = random_split(dataset, [int(len(dataset)*0.8), len(dataset) - int(len(dataset)*0.8)])
     dataset = get_dataset(cfg.dataset)
     train_dataset = dataset['train']
     valid_dataset = dataset['valid']
