@@ -9,6 +9,7 @@ from utils.utils import load_obj
 import torch
 import glob
 from PIL import Image
+import numpy as np
 
 def get_dataset(cfg: DictConfig) -> dict:
     
@@ -54,6 +55,6 @@ class HuBMAPDataset(Dataset):
         mask = np.asarray(Image.open(mask_path))
         trans = self.transform(image=image, mask=mask)
         image = torch.from_numpy(trans["image"].transpose(2, 0, 1))
-        mask = torch.from_numpy(trans["mask"])
+        mask = torch.from_numpy(trans["mask"]).unsqueeze(dim=0).float()
         
         return image, mask

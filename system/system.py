@@ -6,6 +6,7 @@ from scheduler.scheduler import get_scheduler
 import torch
 import numpy as np
 from pytorch_lightning.metrics import Accuracy
+import segmentation_models_pytorch as smp
 
 
 class LitClassifier(pl.LightningModule):
@@ -14,7 +15,8 @@ class LitClassifier(pl.LightningModule):
         self.save_hyperparameters(hparams)
         self.model = model
         self.criteria = get_loss(hparams.training.loss)
-        self.accuracy = Accuracy()
+        #self.accuracy = Accuracy()
+        self.dice =  smp.utils.losses.DiceLoss()
 
     def forward(self, x):
         # use forward for inference/predictions
@@ -38,24 +40,28 @@ class LitClassifier(pl.LightningModule):
         x, y = batch
         y_hat = self.model(x)
         loss = self.criteria(y_hat, y)
-        
+        dice = self.dice(y_hat, y)
+
+        self.log('val_loss', loss)
+        self.log('val_dice_loss', dice)
         return {
             "val_loss": loss,
-            "y": y,
-            "y_hat": y_hat
+            "dice": dice
+            #"y": y,
+            #"y_hat": y_hat
             }
     
-    def validation_epoch_end(self, outputs):
-        avg_val_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
-        y = torch.cat([x["y"] for x in outputs]).cpu()
-        y_hat = torch.cat([x["y_hat"] for x in outputs]).cpu()
+    #def validation_epoch_end(self, outputs):
+        #avg_val_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
+        #y = torch.cat([x["y"] for x in outputs]).cpu()
+        #y_hat = torch.cat([x["y_hat"] for x in outputs]).cpu()
 
-        preds = np.argmax(y_hat, axis=1)
+        #preds = np.argmax(y_hat, axis=1)
 
-        val_accuracy = self.accuracy(y, preds)
+        #val_accuracy = self.accuracy(y, preds)
 
-        self.log('avg_val_loss', avg_val_loss)
-        self.log('val_acc', val_accuracy)
+        #self.log('avg_val_loss', avg_val_loss)
+        #self.log('val_acc', val_accuracy)
 
     def test_step(self, batch, batch_idx):
         x, y = batch

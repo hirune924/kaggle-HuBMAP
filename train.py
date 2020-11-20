@@ -5,9 +5,10 @@ from hydra.utils import to_absolute_path
 from pytorch_lightning import loggers
 from pytorch_lightning import seed_everything
 from pytorch_lightning import Trainer
+from pytorch_lightning.callbacks import LearningRateMonitor, EarlyStopping, ModelCheckpoint
 
 from model.model import get_model
-from dataset.dataset import get_dataset
+from dataset.hubmap import get_dataset
 from system.system import LitClassifier
 
 # for temporary
@@ -24,6 +25,11 @@ def main(cfg : DictConfig) -> None:
     # set logger
     tb_logger = loggers.TensorBoardLogger(**cfg.logging.tb_logger)
     # set callback
+    lr_monitor = LearningRateMonitor(logging_interval='step')
+    early_stopping = EarlyStopping(monitor='val_loss', patience=20, mode='min')
+    checkpoint_callback = ModelCheckpoint(dirpath=cfg.logging.log_dir,
+                                          filename='fold' + str(cfg.dataset.target_fold)+'-{epoch}-{val_loss:.2f}',
+                                          save_top_k=5, mode='min', monitor='val_loss')
 
     # set data
     dataset = get_dataset(cfg.dataset)
@@ -32,7 +38,6 @@ def main(cfg : DictConfig) -> None:
 
     train_loader = DataLoader(train_dataset, **cfg.dataset.dataloader.train)
     val_loader = DataLoader(valid_dataset, **cfg.dataset.dataloader.valid)
-    #test_loader = DataLoader(mnist_test, batch_size=32)
     
     # set model
     model = get_model(cfg.model)
@@ -43,6 +48,7 @@ def main(cfg : DictConfig) -> None:
     # set trainer
     trainer = Trainer(
         logger=[tb_logger],
+        callbacks=[lr_monitor, early_stopping, checkpoint_callback],
         **cfg.trainer
     )
     # training
