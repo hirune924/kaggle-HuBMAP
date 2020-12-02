@@ -1,3 +1,10 @@
+hydra:
+    run:
+        dir: /kqi/output/fold_${dataset.target_fold}
+    sweep:
+        dir: /kqi/output
+        subdir: ${hydra.job.num}
+
 model:
     class_name: segmentation_models_pytorch.Unet
     params: {encoder_name: efficientnet-b3, in_channels: 3, classes: 1}
