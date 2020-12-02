@@ -92,9 +92,9 @@ def main(args):
         #print(row['id'])
         #print(row['encoding'])
         img_name = os.path.join(args.data_dir, 'train/' + row['id'] + '.tiff')
-        img = tiff.imread(img_name)
-        if len(img.shape)==5:
-            img = np.transpose(img.squeeze(), (1,2,0))
+        img = np.squeeze(tiff.imread(img_name))
+        if(img.shape[0] == 3):
+            img = np.transpose(img, (1,2,0))
 
         encoding = row['encoding']
         mask = rle2mask(encoding,(img.shape[1],img.shape[0]))
