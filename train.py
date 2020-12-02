@@ -29,7 +29,7 @@ def main(cfg : DictConfig) -> None:
     early_stopping = EarlyStopping(monitor='val_loss', patience=20, mode='min')
     checkpoint_callback = ModelCheckpoint(dirpath=cfg.logging.log_dir,
                                           filename='fold' + str(cfg.dataset.target_fold)+'-{epoch}-{val_loss:.2f}',
-                                          save_top_k=5, mode='min', monitor='val_loss')
+                                          save_top_k=5, save_weights_only=True, mode='min', monitor='val_loss')
 
     # set data
     dataset = get_dataset(cfg.dataset)
@@ -48,7 +48,8 @@ def main(cfg : DictConfig) -> None:
     # set trainer
     trainer = Trainer(
         logger=[tb_logger],
-        callbacks=[lr_monitor, early_stopping, checkpoint_callback],
+        #callbacks=[lr_monitor, early_stopping, checkpoint_callback],
+        callbacks=[lr_monitor, checkpoint_callback],
         **cfg.trainer
     )
     # training

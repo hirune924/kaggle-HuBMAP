@@ -16,7 +16,7 @@ class LitClassifier(pl.LightningModule):
         self.model = model
         self.criteria = get_loss(hparams.training.loss)
         #self.accuracy = Accuracy()
-        self.dice =  smp.utils.losses.DiceLoss()
+        self.dice =  smp.utils.losses.DiceLoss(activation='sigmoid')
 
     def forward(self, x):
         # use forward for inference/predictions
