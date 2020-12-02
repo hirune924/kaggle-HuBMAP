@@ -1,0 +1,13 @@
+model:
+    class_name: segmentation_models_pytorch.Unet
+    params: {encoder_name: efficientnet-b3, in_channels: 3, classes: 1}
+
+dataset:
+    cv_split:
+        class_name: sklearn.model_selection.KFold
+        params: {n_splits: 5, random_state: 2020, shuffle: true}
+
+training:
+    scheduler:
+        class_name: torch.optim.lr_scheduler.CosineAnnealingLR
+        params: {T_max: 100}

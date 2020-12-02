@@ -12,7 +12,7 @@ private:
 
 model:
     class_name: segmentation_models_pytorch.Unet
-    params: {encoder_name: efficientnet-b3, in_channels: 3, classes: 1}
+    params: {}
 
 dataset:
     data_dir: data/size_2048
@@ -20,7 +20,7 @@ dataset:
     target_fold: 0
     cv_split:
         class_name: sklearn.model_selection.KFold
-        params: {n_splits: 5, random_state: 2020, shuffle: true}
+        params: {}
     batch_size: 32
     image_size: 256
     augmentation:
@@ -67,7 +67,7 @@ training:
         params: {}
     scheduler:
         class_name: torch.optim.lr_scheduler.CosineAnnealingLR
-        params: {T_max: 100}
+        params: {}
 
 trainer:
     max_epochs: 100
