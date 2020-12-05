@@ -46,7 +46,7 @@ class LitClassifier(pl.LightningModule):
         #print('Valid Preprocessing')
         img_info = inf_preprocess(batch['img_pth'][0], tile_size=3072, margin=512)
         #print('Valid Predicting')
-        pred_mask = inference(self.model, img_info, tile_size=3072, margin=512, scale_factor=2)
+        pred_mask = inference(self.model, img_info, tile_size=3072, margin=512, scale_factor=4)
         shutil.rmtree('tiles')
         #print(dice_fn(pred_mask, rle2mask(batch['mask'][0], shape=(img_info['width'], img_info['height']))))
         #print('COMPLETE')
