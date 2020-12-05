@@ -22,8 +22,8 @@ dataset:
     cv_split:
         class_name: sklearn.model_selection.KFold
         params: {}
-    batch_size: 32
-    image_size: 256
+    batch_size: 16
+    image_size: 1024
     augmentation:
         train:
             - class_name: albumentations.CropNonEmptyMaskIfExists
