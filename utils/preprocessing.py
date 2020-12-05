@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 from PIL import Image
+import gc
+import torch
+import albumentations as A
 
 
 def mask2rle(img):
@@ -37,6 +40,70 @@ def rle2mask(mask_rle, shape=(1600,256)):
         img[lo:hi] = 1
     return img.reshape(shape).T
 
+def inf_preprocess(img_name, tile_size, margin):
+    os.makedirs('tiles', exist_ok=True)
+    #img_name = '../input/hubmap-kidney-segmentation/test/'+img_id+'.tiff'
+
+    image = np.squeeze(tiff.imread(img_name))
+    if(image.shape[0] == 3):
+        image = np.transpose(image, (1,2,0))
+
+    channel, width, height = image.shape[2], image.shape[1],image.shape[0]
+    pad_w, pad_h = tile_size - width%tile_size, tile_size - height%tile_size
+
+    num_split_w, num_split_h = int(width/tile_size)+1, int(height/tile_size)+1
+    for h in range(num_split_h):
+        for w in range(num_split_w):
+            tile = image[max(0,h*tile_size-margin):(h+1)*tile_size+margin, max(0,w*tile_size-margin):(w+1)*tile_size+margin, :]
+            if h == 0:
+                tile = np.pad(tile,[[margin,0],[0,0],[0,0]],constant_values=0)
+            if h == num_split_h-1:
+                tile = np.pad(tile,[[0,pad_h+margin],[0,0],[0,0]],constant_values=0)
+            if w == 0:
+                tile = np.pad(tile,[[0,0],[margin,0],[0,0]],constant_values=0)
+            if w == num_split_w-1:
+                tile = np.pad(tile,[[0,0],[0,pad_w+margin],[0,0]],constant_values=0)
+            #print(tile.shape)
+            np.save('tiles/w{}_h{}.npy'.format(w,h) ,tile)
+    del image
+    gc.collect()
+    #img_info[img_id] = {'width': width, 'height': height, 'num_split_w': num_split_w, 'num_split_h': num_split_h}
+    return {'width': width, 'height': height, 'num_split_w': num_split_w, 'num_split_h': num_split_h, 'pad_h': pad_h, 'pad_w': pad_w}
+
+def inference(model, img_info, tile_size, margin, scale_factor):
+    tile_size2 = int((tile_size+margin*2)/scale_factor)
+    transform = A.Compose([A.Resize(height=tile_size2, width=tile_size2, interpolation=1, always_apply=True),
+                           A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], max_pixel_value=255.0, always_apply=True)])
+
+    pad_w, pad_h = img_info['pad_w'], img_info['pad_h']
+    
+    mask = np.zeros((img_info['height']+pad_h, img_info['width']+pad_w), dtype=np.uint8)
+    with torch.no_grad():
+        for h in range(img_info['num_split_h']):
+            for w in range(img_info['num_split_w']):
+                image = np.load('tiles/w{}_h{}.npy'.format(w,h))
+                tmp_pred = np.zeros((tile_size, tile_size))
+                if np.sum(image)!=0:
+                    image = torch.from_numpy(transform(image=image)['image'].transpose(2, 0, 1)).unsqueeze(dim=0).cuda()
+                    #print(images.shape)
+                    pred_tile = torch.sigmoid(model(image))
+                    pred_tile = pred_tile.cpu().detach().numpy().squeeze().astype(np.float32)
+                    tmp_pred = cv2.resize(pred_tile,(tile_size+margin*2,tile_size+margin*2))[margin:-margin,margin:-margin]
+                mask[h*tile_size:(h+1)*tile_size, w*tile_size:(w+1)*tile_size] = tmp_pred>0.5
+    return mask[:img_info['height'], :img_info['width']]
+
+
+def dice_fn(im1, im2):
+    im1 = np.asarray(im1).astype(np.bool)
+    im2 = np.asarray(im2).astype(np.bool)
+
+    if im1.shape != im2.shape:
+        raise ValueError("Shape mismatch: im1 and im2 must have the same shape.")
+
+    # Compute Dice coefficient
+    intersection = np.logical_and(im1, im2)
+
+    return 2. * intersection.sum() / (im1.sum() + im2.sum())
 
 
 def split_image_mask(image, mask, size):

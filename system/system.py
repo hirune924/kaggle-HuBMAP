@@ -8,6 +8,12 @@ import numpy as np
 from pytorch_lightning.metrics import Accuracy
 import segmentation_models_pytorch as smp
 
+from utils.utils import load_obj
+import albumentations as A
+from utils.preprocessing import *
+import shutil
+
+
 
 class LitClassifier(pl.LightningModule):
     def __init__(self, hparams, model):
@@ -37,15 +43,24 @@ class LitClassifier(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self.model(x)
-        loss = self.criteria(y_hat, y)
-        dice = self.dice(y_hat, y)
+        #print('Valid Preprocessing')
+        img_info = inf_preprocess(batch['img_pth'][0], tile_size=3072, margin=512)
+        #print('Valid Predicting')
+        pred_mask = inference(self.model, img_info, tile_size=3072, margin=512, scale_factor=4)
+        shutil.rmtree('tiles')
+        #print(dice_fn(pred_mask, rle2mask(batch['mask'][0], shape=(img_info['width'], img_info['height']))))
+        #print('COMPLETE')
+        dice = dice_fn(pred_mask, rle2mask(batch['mask'][0], shape=(img_info['width'], img_info['height'])))
+        #x, y = batch
+        #y_hat = self.model(x)
+        #loss = self.criteria(y_hat, y)
+        #dice = self.dice(y_hat, y)
 
-        self.log('val_loss', loss)
-        self.log('val_dice_loss', dice)
+        #self.log('val_loss', loss)
+        self.log('val_dice', dice)
+
         return {
-            "val_loss": loss,
+            #"val_loss": loss,
             "dice": dice
             #"y": y,
             #"y_hat": y_hat

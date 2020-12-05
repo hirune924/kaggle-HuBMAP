@@ -1,9 +1,9 @@
-#hydra:
-#    run:
-#        dir: /kqi/output/fold_${dataset.target_fold}
-#    sweep:
-#        dir: /kqi/output
-#        subdir: ${hydra.job.num}
+hydra:
+    run:
+        dir: /kqi/output/fold_${dataset.target_fold}
+    sweep:
+        dir: /kqi/output
+        subdir: ${hydra.job.num}
 
 model:
     class_name: segmentation_models_pytorch.Unet

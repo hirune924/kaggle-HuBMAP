@@ -8,7 +8,7 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import LearningRateMonitor, EarlyStopping, ModelCheckpoint
 
 from model.model import get_model
-from dataset.hubmap import get_dataset
+from dataset.hubmap import get_dataset2
 from system.system import LitClassifier
 
 # for temporary
@@ -26,13 +26,13 @@ def main(cfg : DictConfig) -> None:
     tb_logger = loggers.TensorBoardLogger(**cfg.logging.tb_logger)
     # set callback
     lr_monitor = LearningRateMonitor(logging_interval='step')
-    early_stopping = EarlyStopping(monitor='val_loss', patience=20, mode='min')
+    early_stopping = EarlyStopping(monitor='val_dice', patience=20, mode='min')
     checkpoint_callback = ModelCheckpoint(dirpath=cfg.logging.log_dir,
-                                          filename='fold' + str(cfg.dataset.target_fold)+'-{epoch}-{val_loss:.2f}',
-                                          save_top_k=5, save_weights_only=True, mode='min', monitor='val_loss')
+                                          filename='fold' + str(cfg.dataset.target_fold)+'-{epoch}-{val_dice:.5f}',
+                                          save_top_k=5, save_weights_only=True, mode='min', monitor='val_dice')
 
     # set data
-    dataset = get_dataset(cfg.dataset)
+    dataset = get_dataset2(cfg.dataset)
     train_dataset = dataset['train']
     valid_dataset = dataset['valid']
 
