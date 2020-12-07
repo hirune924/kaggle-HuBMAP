@@ -10,7 +10,7 @@ from pytorch_lightning.callbacks import LearningRateMonitor, EarlyStopping, Mode
 from model.model import get_model
 from dataset.hubmap import get_dataset2
 from system.system import LitClassifier
-
+from callback.callback import ValidWholeImageCallback
 # for temporary
 from torchvision.datasets import CIFAR10
 from torchvision import transforms
@@ -29,7 +29,7 @@ def main(cfg : DictConfig) -> None:
     early_stopping = EarlyStopping(monitor='val_dice', patience=20, mode='min')
     checkpoint_callback = ModelCheckpoint(dirpath=cfg.logging.log_dir,
                                           filename='fold' + str(cfg.dataset.target_fold)+'-{epoch}-{val_dice:.5f}',
-                                          save_top_k=5, save_weights_only=True, mode='min', monitor='val_dice')
+                                          save_top_k=5, save_weights_only=True, mode='max', monitor='val_dice')
 
     # set data
     dataset = get_dataset2(cfg.dataset)
@@ -38,7 +38,7 @@ def main(cfg : DictConfig) -> None:
 
     train_loader = DataLoader(train_dataset, **cfg.dataset.dataloader.train)
     val_loader = DataLoader(valid_dataset, **cfg.dataset.dataloader.valid)
-    
+    valid_callback = ValidWholeImageCallback(dataset['valid_img_id'], cfg.dataset)
     # set model
     model = get_model(cfg.model)
 
@@ -49,7 +49,7 @@ def main(cfg : DictConfig) -> None:
     trainer = Trainer(
         logger=[tb_logger],
         #callbacks=[lr_monitor, early_stopping, checkpoint_callback],
-        callbacks=[lr_monitor, checkpoint_callback],
+        callbacks=[lr_monitor, checkpoint_callback, valid_callback],
         **cfg.trainer
     )
     # training

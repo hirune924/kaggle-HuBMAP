@@ -11,6 +11,7 @@ import glob
 from PIL import Image
 import numpy as np
 
+cv2.setNumThreads(0)
 
 def get_dataset2(cfg: DictConfig) -> dict:
     
@@ -24,15 +25,23 @@ def get_dataset2(cfg: DictConfig) -> dict:
     train_df = df[df["fold"] != cfg.target_fold]
     valid_df = df[df["fold"] == cfg.target_fold]
 
+    valid_img_id = list(valid_df['id'].values)
+
     train_image_list = []
     for index, row in train_df.iterrows():
         train_image_list += glob.glob(to_absolute_path(os.path.join(cfg.data_dir, "*" + row['id'] + "_image.png")))
     train_df = pd.DataFrame({'image': train_image_list})
     train_df['mask'] = train_df['image'].str[:-9]+'mask.png'
 
-    valid_df['id'] = to_absolute_path(cfg.data_root) + '/train/' + valid_df['id'] + '.tiff'
-    print(train_df)
-    print(valid_df)
+    valid_image_list = []
+    for index, row in valid_df.iterrows():
+        valid_image_list += glob.glob(to_absolute_path(os.path.join(cfg.data_dir, "*" + row['id'] + "_image.png")))
+    valid_df = pd.DataFrame({'image': valid_image_list})
+    valid_df['mask'] = valid_df['image'].str[:-9]+'mask.png'
+
+    #valid_df['id'] = to_absolute_path(cfg.data_root) + '/train/' + valid_df['id'] + '.tiff'
+    #print(train_df)
+    #print(valid_df)
 
     train_augs_list = [load_obj(i["class_name"])(**i["params"]) for i in cfg.augmentation.train]
     train_augs = A.Compose(train_augs_list)
@@ -41,9 +50,10 @@ def get_dataset2(cfg: DictConfig) -> dict:
     valid_augs = A.Compose(valid_augs_list)
 
     train_dataset = HuBMAPDataset(train_df, transform=train_augs)
-    valid_dataset = HuBMAPValidDataset(valid_df, transform=valid_augs)
+    #valid_dataset = HuBMAPValidDataset(valid_df, transform=valid_augs)
+    valid_dataset = HuBMAPDataset(valid_df, transform=valid_augs)
 
-    return {"train": train_dataset, "valid": valid_dataset}
+    return {"train": train_dataset, "valid": valid_dataset, 'valid_img_id': valid_img_id}
     
 
 class HuBMAPValidDataset(Dataset):

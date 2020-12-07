@@ -40,8 +40,8 @@ def rle2mask(mask_rle, shape=(1600,256)):
         img[lo:hi] = 1
     return img.reshape(shape).T
 
-def inf_preprocess(img_name, tile_size, margin):
-    os.makedirs('tiles', exist_ok=True)
+def inf_preprocess(img_name, tile_size, margin, img_id):
+    os.makedirs('../tiles', exist_ok=True)
     #img_name = '../input/hubmap-kidney-segmentation/test/'+img_id+'.tiff'
 
     image = np.squeeze(tiff.imread(img_name))
@@ -64,11 +64,11 @@ def inf_preprocess(img_name, tile_size, margin):
             if w == num_split_w-1:
                 tile = np.pad(tile,[[0,0],[0,pad_w+margin],[0,0]],constant_values=0)
             #print(tile.shape)
-            np.save('tiles/w{}_h{}.npy'.format(w,h) ,tile)
+            np.save('../tiles/{}_w{}_h{}.npy'.format(img_id,w,h) ,tile)
     del image
     gc.collect()
     #img_info[img_id] = {'width': width, 'height': height, 'num_split_w': num_split_w, 'num_split_h': num_split_h}
-    return {'width': width, 'height': height, 'num_split_w': num_split_w, 'num_split_h': num_split_h, 'pad_h': pad_h, 'pad_w': pad_w}
+    return {'img_id': img_id,'width': width, 'height': height, 'num_split_w': num_split_w, 'num_split_h': num_split_h, 'pad_h': pad_h, 'pad_w': pad_w}
 
 def inference(model, img_info, tile_size, margin, scale_factor):
     tile_size2 = int((tile_size+margin*2)/scale_factor)
@@ -81,7 +81,7 @@ def inference(model, img_info, tile_size, margin, scale_factor):
     with torch.no_grad():
         for h in range(img_info['num_split_h']):
             for w in range(img_info['num_split_w']):
-                image = np.load('tiles/w{}_h{}.npy'.format(w,h))
+                image = np.load('../tiles/{}_w{}_h{}.npy'.format(img_info['img_id'],w,h))
                 tmp_pred = np.zeros((tile_size, tile_size))
                 if np.sum(image)!=0:
                     image = torch.from_numpy(transform(image=image)['image'].transpose(2, 0, 1)).unsqueeze(dim=0).cuda()
