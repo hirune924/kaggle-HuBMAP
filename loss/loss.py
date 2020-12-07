@@ -5,3 +5,4 @@ def get_loss(cfg):
     loss = loss(**cfg.params)
 
     return loss
+
