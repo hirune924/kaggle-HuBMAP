@@ -18,3 +18,6 @@ training:
     scheduler:
         class_name: torch.optim.lr_scheduler.CosineAnnealingLR
         params: {T_max: 100}
+    loss:
+        class_name: loss.boundary_loss.DC_and_HDBinary_loss
+        params: {soft_dice_kwargs: {}, hd_kwargs: {}}
