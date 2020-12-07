@@ -38,7 +38,7 @@ def main(cfg : DictConfig) -> None:
 
     train_loader = DataLoader(train_dataset, **cfg.dataset.dataloader.train)
     val_loader = DataLoader(valid_dataset, **cfg.dataset.dataloader.valid)
-    valid_callback = ValidWholeImageCallback(dataset['valid_img_id'], cfg.dataset)
+    valid_callback = ValidWholeImageCallback(dataset['valid_img_id'], cfg.dataset, cfg.trainer.max_epochs/2, 10)
     # set model
     model = get_model(cfg.model)
 
