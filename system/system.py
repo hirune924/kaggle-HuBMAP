@@ -48,16 +48,20 @@ class LitClassifier(pl.LightningModule):
         loss = self.criteria(y_hat, y)
         dice = 1-self.dice(y_hat, y)
 
-        self.log('val_loss', loss)
-        self.log('val_dice', dice)
+        #self.log('val_loss', loss)
+        #self.log('val_dice', dice)
 
         return {
             "val_loss": loss,
             "val_dice": dice
             }
     
-    #def validation_epoch_end(self, outputs):
-        #avg_val_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
+    def validation_epoch_end(self, outputs):
+        avg_val_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
+        avg_val_dice = torch.stack([x["val_dice"] for x in outputs]).mean()
+
+        self.log('val_loss', avg_val_loss)
+        self.log('val_dice', avg_val_dice)
         #y = torch.cat([x["y"] for x in outputs]).cpu()
         #y_hat = torch.cat([x["y_hat"] for x in outputs]).cpu()
 

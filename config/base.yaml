@@ -84,7 +84,7 @@ trainer:
     #auto_scale_batch_size: null # null | binsearch | power
     #auto_lr_find: false # 'training.learning_rate' # true
     #deterministic: false
-    #benchmark: true
+    benchmark: true
     #accelerator: null
     #check_val_every_n_epoch: 1
     #default_root_dir: null
