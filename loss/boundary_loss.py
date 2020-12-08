@@ -127,8 +127,8 @@ class SoftDiceLoss(nn.Module):
         else:
             axes = list(range(2, len(shp_x)))
 
-        if self.apply_nonlin is not None:
-            x = self.apply_nonlin(x)
+        #if self.apply_nonlin is not None:
+        x = torch.sigmoid(x)
 
         tp, fp, fn = get_tp_fp_fn(x, y, axes, loss_mask, self.square)
 

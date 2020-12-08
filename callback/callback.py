@@ -20,7 +20,7 @@ class ValidWholeImageCallback(Callback):
             self.img_info[i] = inf_preprocess(img_pth, tile_size=3072, margin=512, img_id=i)
 
     def on_validation_epoch_end(self, trainer, pl_module):
-        if trainer.global_step > self.start_epoch and trainer.global_step % self.step_epoch == 0:
+        if trainer.current_epoch > self.start_epoch and trainer.current_epoch % self.step_epoch == 0:
             print('validating for wsi')
             dice = 0.0
             for k in self.img_info.keys():
