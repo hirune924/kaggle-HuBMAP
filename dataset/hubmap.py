@@ -30,6 +30,12 @@ def get_dataset2(cfg: DictConfig) -> dict:
     train_image_list = []
     for index, row in train_df.iterrows():
         train_image_list += glob.glob(to_absolute_path(os.path.join(cfg.data_dir, "*" + row['id'] + "_image.png")))
+    if cfg.ext_data_dir is not None:
+        ext_img_list = glob.glob(to_absolute_path(os.path.join(cfg.ext_data_dir, "*_image.png")))
+        for i in ['HBM227.QKNQ.293', 'HBM345.LXHZ.233', 'HBM635.BJXT.387', 'HBM676.TDHK.358', 'HBM662.PBGS.268', 'HBM464.GFFC.829', 'HBM385.RWPR.397', 'HBM894.GBWP.856']:
+            ext_img_list = [im for im in ext_img_list if i not in im]
+        train_image_list += ext_img_list
+
     train_df = pd.DataFrame({'image': train_image_list})
     train_df['mask'] = train_df['image'].str[:-9]+'mask.png'
 

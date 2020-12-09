@@ -17,6 +17,7 @@ model:
 dataset:
     data_dir: data/size_2048
     data_root: data/
+    ext_data_dir: null
     num_classes: 1
     target_fold: 0
     cv_split:
