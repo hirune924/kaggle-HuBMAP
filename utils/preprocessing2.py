@@ -146,8 +146,8 @@ def split_save_image_mask(image, mask, size, save_dir, img_id):
     for h in range(num_split_h):
         for w in range(num_split_w):
             if np.sum(image[h*size:(h+1)*size, w*size:(w+1)*size, :])!=0:
-                Image.fromarray(image[h*size:(h+1)*size, w*size:(w+1)*size, :]).save(os.path.join(save_dir,'size_{}/w{}-h{}-{}_image.png'.format(size,w,h,img_id)))
-                Image.fromarray(mask[h*size:(h+1)*size, w*size:(w+1)*size]).save(os.path.join(save_dir,'size_{}/w{}-h{}-{}_mask.png'.format(size,w,h,img_id)))
+                Image.fromarray(image[h*size:(h+1)*size, w*size:(w+1)*size, :]).save(os.path.join(save_dir,'size_{}/w{}-h{}-{}_image.png'.format(size,w,h,img_id[:-5])))
+                Image.fromarray(mask[h*size:(h+1)*size, w*size:(w+1)*size]).save(os.path.join(save_dir,'size_{}/w{}-h{}-{}_mask.png'.format(size,w,h,img_id[:-5])))
     return
 
 
@@ -158,7 +158,7 @@ def main(args):
     for idx, row in train.iterrows():
         #print(row['id'])
         #print(row['encoding'])
-        img_name = os.path.join(args.data_dir, row['id'] + '.tiff')
+        img_name = os.path.join(args.data_dir, row['id'])
         img = np.squeeze(tiff.imread(img_name))
         if(img.shape[0] == 3):
             img = np.transpose(img, (1,2,0))
