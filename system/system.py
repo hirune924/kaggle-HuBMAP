@@ -37,6 +37,13 @@ class LitClassifier(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, y = batch
+        if self.hparams.dataset.mixup:
+            num_batch = self.hparams.dataset.batch_size
+            alpha = 0.2
+            rnd = torch.from_numpy(np.random.beta(alpha,alpha,int(num_batch/2))).type_as(x)
+            rnd = rnd.reshape(int(num_batch/2), 1, 1, 1)
+            x = x[:int(num_batch/2)]*rnd + x[int(num_batch/2):]*(1-rnd)
+            y = y[:int(num_batch/2)]*rnd + y[int(num_batch/2):]*(1-rnd)
         y_hat = self.model(x)
         loss = self.criteria(y_hat, y)
         self.log('train_loss', loss, on_epoch=True)
