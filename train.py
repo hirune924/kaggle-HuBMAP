@@ -11,6 +11,8 @@ from model.model import get_model
 from dataset.hubmap import get_dataset2
 from system.system import LitClassifier
 from callback.callback import ValidWholeImageCallback
+from utils.utils import custom_load
+
 # for temporary
 from torchvision.datasets import CIFAR10
 from torchvision import transforms
@@ -41,6 +43,9 @@ def main(cfg : DictConfig) -> None:
     #valid_callback = ValidWholeImageCallback(dataset['valid_img_id'], cfg.dataset, cfg.trainer.max_epochs/2, 10)
     # set model
     model = get_model(cfg.model)
+    if cfg.model.ssl_model is not None:
+        print('Loading ssl model: {}'.format(cfg.model.ssl_model))
+        model.load_state_dict(custom_load(cfg.model.ssl_model), strict=False)
 
     # set lit system
     lit_model = LitClassifier(hparams=cfg, model=model)
