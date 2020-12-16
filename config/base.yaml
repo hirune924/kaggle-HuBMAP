@@ -13,6 +13,7 @@ private:
 model:
     class_name: segmentation_models_pytorch.Unet
     params: {}
+    ssl_model: null
 
 dataset:
     data_dir: data/size_2048
