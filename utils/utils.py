@@ -33,3 +33,11 @@ def load_pytorch_model(ckpt_name, model):
         new_state_dict[name] = v
     model.load_state_dict(new_state_dict)
     return model
+
+def custom_load(ckpt_pth):
+    state_dict = torch.load(ckpt_pth)
+    new_state_dict = OrderedDict()
+    for k, v in state_dict.items():
+        name = k
+        new_state_dict['encoder.'+name] = v
+    return new_state_dict
