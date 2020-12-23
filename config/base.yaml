@@ -20,6 +20,7 @@ dataset:
     data_root: data/
     ext_data_dir: null
     mixup: false
+    use_mask_exist: false
     num_classes: 1
     target_fold: 0
     cv_split:

@@ -38,6 +38,12 @@ def get_dataset2(cfg: DictConfig) -> dict:
 
     train_df = pd.DataFrame({'image': train_image_list})
     train_df['mask'] = train_df['image'].str[:-9]+'mask.png'
+    if cfg.use_mask_exist:
+        remove_index = []
+        for index, row in train_df.iterrows():
+            if np.sum(cv2.imread(row['mask'])) == 0:
+                remove_index.append(index)
+        train_df = train_df.drop(remove_index)
 
     valid_image_list = []
     for index, row in valid_df.iterrows():
