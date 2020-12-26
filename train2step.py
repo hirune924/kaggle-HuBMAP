@@ -60,10 +60,34 @@ def main(cfg : DictConfig) -> None:
     )
     # training
     trainer.fit(lit_model, train_loader, val_loader)
+    
+    
+    # finetune
+    cfg.dataset.ext_data_dir = None
+    cfg.dataset.use_mask_exist = False
+    cfg.trainer.max_epochs = int(cfg.trainer.max_epochs/2)
+    cfg.trainer.min_epochs = cfg.trainer.max_epochs
+    checkpoint_callback = ModelCheckpoint(dirpath=cfg.logging.log_dir,
+                                          filename='finetune-fold' + str(cfg.dataset.target_fold)+'-{epoch}-{val_dice:.5f}',
+                                          save_top_k=5, save_weights_only=True, mode='max', monitor='val_dice')
 
-    # test (if you need)
-    #result = trainer.test(test_dataloaders=test_loader)
-    #print(result)
+    # set data
+    dataset = get_dataset2(cfg.dataset)
+    train_dataset = dataset['train']
+    valid_dataset = dataset['valid']
+
+    train_loader = DataLoader(train_dataset, **cfg.dataset.dataloader.train)
+    val_loader = DataLoader(valid_dataset, **cfg.dataset.dataloader.valid)
+    
+    trainer = Trainer(
+        logger=[tb_logger],
+        #callbacks=[lr_monitor, early_stopping, checkpoint_callback],
+        #callbacks=[lr_monitor, checkpoint_callback, valid_callback],
+        callbacks=[lr_monitor, checkpoint_callback],
+        **cfg.trainer
+    )
+    # training
+    trainer.fit(lit_model, train_loader, val_loader)
 
 if __name__ == "__main__":
     main()
