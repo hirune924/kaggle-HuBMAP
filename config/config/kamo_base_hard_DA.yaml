@@ -21,10 +21,10 @@ dataset:
               params: {height: '${dataset.image_size}', width: '${dataset.image_size}', interpolation: 1, always_apply: true, p: 1.0}
             - class_name: albumentations.ShiftScaleRotate
               params: {}
-            #- class_name: albumentations.MaskDropout
-            #  params: {}
-            - class_name: albumentations.RandomGridShuffle 
-              params: {grid: [2, 2]}
+            - class_name: albumentations.MaskDropout
+              params: {}
+            #- class_name: albumentations.RandomGridShuffle 
+            #  params: {grid: [2, 2]}
             - class_name: albumentations.Blur
               params: {}
             - class_name: albumentations.InvertImg
