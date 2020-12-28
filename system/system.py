@@ -40,12 +40,16 @@ class LitClassifier(pl.LightningModule):
         if self.hparams.dataset.mixup:
             num_batch = self.hparams.dataset.batch_size
             alpha = 0.2
-            #rnd = torch.from_numpy(np.random.beta(alpha,alpha,int(num_batch/2))).type_as(x)
-            #rnd = rnd.reshape(int(num_batch/2), 1, 1, 1)
-            #x = x[:int(num_batch/2)]*rnd + x[int(num_batch/2):]*(1-rnd)
-            #y = y[:int(num_batch/2)]*rnd + y[int(num_batch/2):]*(1-rnd)
             rnd = torch.from_numpy(np.random.beta(alpha,alpha,1)).type_as(x)
             x = x[:int(num_batch/2)]*rnd + x[int(num_batch/2):]*(1-rnd)
+            
+        if self.hparams.dataset.cutmix:
+            lam = np.random.beta(0.5, 0.5)
+            rand_index = torch.randperm(x.size()[0]).type_as(x)
+            bbx1, bby1, bbx2, bby2 = rand_bbox(x.size(), lam)
+            x[:, :, bbx1:bbx2, bby1:bby2] = x[rand_index, :, bbx1:bbx2, bby1:bby2]
+            y[:, :, bbx1:bbx2, bby1:bby2] = y[rand_index, :, bbx1:bbx2, bby1:bby2]
+            
         y_hat = self.model(x)
         if self.hparams.dataset.mixup:
             loss = self.criteria(y_hat, y[:int(num_batch/2)])*rnd + self.criteria(y_hat, y[int(num_batch/2):])*(1-rnd)
@@ -89,5 +93,23 @@ class LitClassifier(pl.LightningModule):
         y_hat = self.model(x)
         loss = self.criteria(y_hat, y)
         self.log('test_loss', loss)
+        
+def rand_bbox(size, lam):
+    W = size[2]
+    H = size[3]
+    cut_rat = np.sqrt(1. - lam)
+    cut_w = np.int(W * cut_rat)
+    cut_h = np.int(H * cut_rat)
+
+    # uniform
+    cx = np.random.randint(W)
+    cy = np.random.randint(H)
+
+    bbx1 = np.clip(cx - cut_w // 2, 0, W)
+    bby1 = np.clip(cy - cut_h // 2, 0, H)
+    bbx2 = np.clip(cx + cut_w // 2, 0, W)
+    bby2 = np.clip(cy + cut_h // 2, 0, H)
+
+    return bbx1, bby1, bbx2, bby2
 
     
