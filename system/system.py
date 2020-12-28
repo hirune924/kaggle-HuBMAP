@@ -45,7 +45,7 @@ class LitClassifier(pl.LightningModule):
             
         if self.hparams.dataset.cutmix:
             lam = np.random.beta(0.5, 0.5)
-            rand_index = torch.randperm(x.size()[0]).type_as(x)
+            rand_index = torch.randperm(x.size()[0]).type_as(x).long()
             bbx1, bby1, bbx2, bby2 = rand_bbox(x.size(), lam)
             x[:, :, bbx1:bbx2, bby1:bby2] = x[rand_index, :, bbx1:bbx2, bby1:bby2]
             y[:, :, bbx1:bbx2, bby1:bby2] = y[rand_index, :, bbx1:bbx2, bby1:bby2]
