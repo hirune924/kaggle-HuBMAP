@@ -54,14 +54,14 @@ class LitClassifier(pl.LightningModule):
         if self.hparams.dataset.mixup:
             loss = self.criteria(y_hat, y[:int(num_batch/2)])*rnd + self.criteria(y_hat, y[int(num_batch/2):])*(1-rnd)
         else:
-            loss = self.criteria(y_hat, y)
+            loss = self.criteria(y_hat, y, y_label, label)
         self.log('train_loss', loss, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, y, label = batch
         y_hat, y_label = self.model(x)
-        loss = self.criteria(y_hat, y)
+        loss = self.criteria(y_hat, y, y_label, label)
         dice = 1-self.dice(y_hat, y)
 
         #self.log('val_loss', loss)
@@ -91,7 +91,7 @@ class LitClassifier(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         x, y, label = batch
         y_hat, y_label = self.model(x)
-        loss = self.criteria(y_hat, y)
+        loss = self.criteria(y_hat, y, y_label, label)
         self.log('test_loss', loss)
         
 def rand_bbox(size, lam):
