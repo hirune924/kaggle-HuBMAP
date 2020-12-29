@@ -7,7 +7,7 @@ hydra:
 
 model:
     class_name: segmentation_models_pytorch.Unet
-    params: {encoder_name: efficientnet-b3, in_channels: 3, classes: 1}
+    params: {encoder_name: efficientnet-b3, in_channels: 3, classes: 1, aux_params: {classes: 1}}
 
 dataset:
     cv_split:
