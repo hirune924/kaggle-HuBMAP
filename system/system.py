@@ -49,6 +49,11 @@ class LitClassifier(pl.LightningModule):
             bbx1, bby1, bbx2, bby2 = rand_bbox(x.size(), lam)
             x[:, :, bbx1:bbx2, bby1:bby2] = x[rand_index, :, bbx1:bbx2, bby1:bby2]
             y[:, :, bbx1:bbx2, bby1:bby2] = y[rand_index, :, bbx1:bbx2, bby1:bby2]
+            for i in range(x.size()[0]):
+                if y[i,:].sum()==0:
+                    label[i] = 0
+                else:
+                    label[i] = 1
             
         y_hat, y_label = self.model(x)
         if self.hparams.dataset.mixup:
