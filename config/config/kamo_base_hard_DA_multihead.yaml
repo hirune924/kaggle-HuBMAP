@@ -64,7 +64,7 @@ training:
         class_name: torch.optim.lr_scheduler.CosineAnnealingLR
         params: {T_max: '${trainer.max_epochs}'}
     loss:
-        class_name: loss.multiloss.MultiLoss
+        class_name: loss.multiloss.OUSMMultiLoss
         params: {} 
     #loss:
     #    class_name: loss.boundary_loss.DC_and_HDBinary_loss
