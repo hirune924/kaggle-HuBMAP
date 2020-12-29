@@ -15,8 +15,10 @@ dataset:
         params: {n_splits: 4, shuffle: false}
     augmentation:
         train:
-            - class_name: albumentations.CropNonEmptyMaskIfExists
-              params: {height: 1024, width: 1024, always_apply: true, p: 1.0}
+            #- class_name: albumentations.CropNonEmptyMaskIfExists
+            #  params: {height: 1024, width: 1024, always_apply: true, p: 1.0}
+            - class_name: albumentations.RandomResizedCrop
+              params: {height: 1024, width: 1024, scale: [0.8, 1.2], always_apply: true, p: 1.0}
             - class_name: albumentations.Resize
               params: {height: '${dataset.image_size}', width: '${dataset.image_size}', interpolation: 1, always_apply: true, p: 1.0}
             - class_name: albumentations.ShiftScaleRotate
@@ -48,8 +50,10 @@ dataset:
             - class_name: albumentations.Normalize
               params: {mean: [0.485, 0.456, 0.406], std: [0.229, 0.224, 0.225], max_pixel_value: 255.0, always_apply: false, p: 1.0}
         valid: 
-            - class_name: albumentations.CropNonEmptyMaskIfExists
-              params: {height: 1024, width: 1024, always_apply: true, p: 1.0}
+            #- class_name: albumentations.CropNonEmptyMaskIfExists
+            #  params: {height: 1024, width: 1024, always_apply: true, p: 1.0}
+            - class_name: albumentations.RandomResizedCrop
+              params: {height: 1024, width: 1024, scale: [0.8, 1.2], always_apply: true, p: 1.0}
             - class_name: albumentations.Resize
               params: {height: '${dataset.image_size}', width: '${dataset.image_size}', interpolation: 1, always_apply: false, p: 1.0}
             - class_name: albumentations.Normalize
@@ -59,6 +63,9 @@ training:
     scheduler:
         class_name: torch.optim.lr_scheduler.CosineAnnealingLR
         params: {T_max: '${trainer.max_epochs}'}
+    loss:
+        class_name: loss.multiloss.MultiLoss
+        params: {} 
     #loss:
     #    class_name: loss.boundary_loss.DC_and_HDBinary_loss
     #    params: {soft_dice_kwargs: {}, hd_kwargs: {}}
