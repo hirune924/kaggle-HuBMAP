@@ -127,8 +127,8 @@ class HuBMAPDataset(Dataset):
         image = torch.from_numpy(trans["image"].transpose(2, 0, 1))
         mask = torch.from_numpy(trans["mask"]).unsqueeze(dim=0).float()
         
-        label = 0
+        label = torch.Tensor([0])
         if mask.sum() != 0:
-            label = 1
+            label = torch.Tensor([1])
         
         return image, mask, label
