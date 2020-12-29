@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 import numpy as np
-import catalyst.contrib.nn.criterion.dice.BCEDiceLoss as BCEDiceLoss
+from catalyst.contrib.nn.criterion.dice import BCEDiceLoss
 
 class MultiLoss(nn.Module):
     def __init__(self):
