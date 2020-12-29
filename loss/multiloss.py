@@ -21,11 +21,11 @@ class OUSMMultiLoss(nn.Module):
     def __init__(self):
         super(OUSMMultiLoss, self).__init__()
         self.seg_criteria = BCEDiceLoss()
-        self.cls_criteria = nn.BCEWithLogitsLoss()
+        self.cls_criteria = nn.BCEWithLogitsLoss(reduction='none')
 
     def forward(self, y_hat, y, y_label, label):
         bs = y_label.shape[0]
-        losses = self.cls_criteria(y_label, label, reduction='none')
+        losses = self.cls_criteria(y_label, label)
         if len(losses.shape) == 2:
             losses = losses.mean(1)
         _, idxs = losses.topk(int(bs*0.8), largest=False)
