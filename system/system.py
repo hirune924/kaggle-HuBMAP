@@ -36,7 +36,7 @@ class LitClassifier(pl.LightningModule):
         return [optimizer], [scheduler]
 
     def training_step(self, batch, batch_idx):
-        x, y = batch
+        x, y, label = batch
         if self.hparams.dataset.mixup:
             num_batch = self.hparams.dataset.batch_size
             alpha = 0.2
@@ -50,7 +50,7 @@ class LitClassifier(pl.LightningModule):
             x[:, :, bbx1:bbx2, bby1:bby2] = x[rand_index, :, bbx1:bbx2, bby1:bby2]
             y[:, :, bbx1:bbx2, bby1:bby2] = y[rand_index, :, bbx1:bbx2, bby1:bby2]
             
-        y_hat = self.model(x)
+        y_hat, y_label = self.model(x)
         if self.hparams.dataset.mixup:
             loss = self.criteria(y_hat, y[:int(num_batch/2)])*rnd + self.criteria(y_hat, y[int(num_batch/2):])*(1-rnd)
         else:
@@ -59,8 +59,8 @@ class LitClassifier(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self.model(x)
+        x, y, label = batch
+        y_hat, y_label = self.model(x)
         loss = self.criteria(y_hat, y)
         dice = 1-self.dice(y_hat, y)
 
@@ -89,8 +89,8 @@ class LitClassifier(pl.LightningModule):
         #self.log('val_acc', val_accuracy)
 
     def test_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self.model(x)
+        x, y, label = batch
+        y_hat, y_label = self.model(x)
         loss = self.criteria(y_hat, y)
         self.log('test_loss', loss)
         
