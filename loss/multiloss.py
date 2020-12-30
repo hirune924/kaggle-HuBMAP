@@ -28,7 +28,7 @@ class OUSMMultiLoss(nn.Module):
         losses = self.cls_criteria(y_label, label)
         if len(losses.shape) == 2:
             losses = losses.mean(1)
-        _, idxs = losses.topk(int(bs*0.8), largest=False)
+        _, idxs = losses.topk(int(bs*0.), largest=False)
         
         cls_loss = losses.index_select(0, idxs).mean()
         
