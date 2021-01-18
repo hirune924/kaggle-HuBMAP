@@ -36,7 +36,11 @@ class LitClassifier(pl.LightningModule):
         return [optimizer], [scheduler]
 
     def training_step(self, batch, batch_idx):
-        x, y = batch
+        print(batch)
+        x, y, y2 = batch
+        print(x.shape)
+        print(y.shape)
+        print(y2.shape)
         if self.hparams.dataset.mixup:
             num_batch = self.hparams.dataset.batch_size
             alpha = 0.2
