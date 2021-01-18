@@ -37,10 +37,12 @@ class LitClassifier(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         print(batch)
-        x, y, y2 = batch
+        labeled_batch, unlabeled_batch = batch
+        x, y = labeled_batch
+        un_x = unlabeled_batch
         print(x.shape)
         print(y.shape)
-        print(y2.shape)
+        print(un_x.shape)
         if self.hparams.dataset.mixup:
             num_batch = self.hparams.dataset.batch_size
             alpha = 0.2
