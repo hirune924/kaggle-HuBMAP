@@ -16,10 +16,12 @@ import shutil
 
 
 class LitClassifier(pl.LightningModule):
-    def __init__(self, hparams, model):
+    def __init__(self, hparams, s_model, t_model, t_optim):
         super().__init__()
         self.save_hyperparameters(hparams)
-        self.model = model
+        self.s_model = s_model
+        self.t_model = t_model
+        self.t_optim = t_optim
         self.criteria = get_loss(hparams.training.loss)
         #self.accuracy = Accuracy()
         self.dice =  smp.utils.losses.DiceLoss(activation='sigmoid')
