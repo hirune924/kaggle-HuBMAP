@@ -18,12 +18,6 @@ from torchvision.datasets import CIFAR10
 from torchvision import transforms
 from torch.utils.data import DataLoader, random_split
 
-from __future__ import print_function
-import torchvision
-from torch.utils.data import DataLoader
-from torchvision import transforms
-
-
 class MyIter(object):
   """An iterator."""
   def __init__(self, my_loader):
