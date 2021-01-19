@@ -15,21 +15,55 @@ import shutil
 
 import torch.nn as nn, torch.nn.functional as F
 
+class EMAWeightOptimizer(object):
+    def __init__(self, target_net, source_net, ema_alpha):
+        self.target_net = target_net
+        self.source_net = source_net
+        self.ema_alpha = ema_alpha
+        self.target_params = [p for p in target_net.state_dict().values() if p.dtype == torch.float]
+        self.source_params = [p for p in source_net.state_dict().values() if p.dtype == torch.float]
+
+        for tgt_p, src_p in zip(self.target_params, self.source_params):
+            tgt_p[...] = src_p[...]
+
+        target_keys = set(target_net.state_dict().keys())
+        source_keys = set(source_net.state_dict().keys())
+        if target_keys != source_keys:
+            raise ValueError('Source and target networks do not have the same state dict keys; do they have different architectures?')
+
+
+    def step(self):
+        one_minus_alpha = 1.0 - self.ema_alpha
+        for tgt_p, src_p in zip(self.target_params, self.source_params):
+            tgt_p.mul_(self.ema_alpha)
+            tgt_p.add_(src_p * one_minus_alpha)
 def robust_binary_crossentropy(pred, tgt, eps=1e-6):
     inv_tgt = 1.0 - tgt
     inv_pred = 1.0 - pred + eps
     return -(tgt * torch.log(pred + eps) + inv_tgt * torch.log(inv_pred))
 
 class LitClassifier(pl.LightningModule):
-    def __init__(self, hparams, s_model, t_model, t_optim):
+    def __init__(self, hparams, model):
         super().__init__()
         self.save_hyperparameters(hparams)
-        self.s_model = s_model
-        self.t_model = t_model
-        self.t_optim = t_optim
+        self.s_model = model
+        self.t_model = deepcopy(model)
         self.criteria = get_loss(hparams.training.loss)
         #self.accuracy = Accuracy()
         self.dice =  smp.utils.losses.DiceLoss(activation='sigmoid')
+
+    def on_train_start(self):
+        # model will put in GPU before this function
+        # so we initiate EMA and WeightDecayModule here
+        self.ema = EMAWeightOptimizer(self.s_model, self.t_model, 0.999)
+        # self.wdm = WeightDecayModule(self.classifier, self.hparams.weight_decay, ["bn", "bias"])
+
+    def on_train_batch_end(self, *args, **kwargs):
+        # self.ema.update(self.classifier)
+        # wd = self.hparams.weight_decay * self.hparams.learning_rate
+        # customized_weight_decay(self.classifier, self.hparams.weight_decay, ["bn", "bias"])
+        # self.wdm.decay()
+        self.ema.step()
 
     def forward(self, x):
         # use forward for inference/predictions
@@ -98,7 +132,6 @@ class LitClassifier(pl.LightningModule):
         consistency_loss = robust_binary_crossentropy(prob_unsup_s, prob_unsup_t)
         consistency_loss = consistency_loss.sum(dim=1, keepdim=True)
         consistency_loss = (consistency_loss * loss_mask).mean()
-        self.t_optim.step()
         
         self.log('train_loss', sup_loss + consistency_loss, on_epoch=True)
         return sup_loss + consistency_loss
