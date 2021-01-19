@@ -13,7 +13,12 @@ import albumentations as A
 from utils.preprocessing import *
 import shutil
 
+import torch.nn as nn, torch.nn.functional as F
 
+def robust_binary_crossentropy(pred, tgt, eps=1e-6):
+    inv_tgt = 1.0 - tgt
+    inv_pred = 1.0 - pred + eps
+    return -(tgt * torch.log(pred + eps) + inv_tgt * torch.log(inv_pred))
 
 class LitClassifier(pl.LightningModule):
     def __init__(self, hparams, s_model, t_model, t_optim):
@@ -38,37 +43,66 @@ class LitClassifier(pl.LightningModule):
         return [optimizer], [scheduler]
 
     def training_step(self, batch, batch_idx):
-        print(batch)
+        #print(batch)
         labeled_batch, unlabeled_batch = batch
         x, y = labeled_batch
         un_x = unlabeled_batch
-        print(x.shape)
-        print(y.shape)
-        print(un_x.shape)
-        if self.hparams.dataset.mixup:
-            num_batch = self.hparams.dataset.batch_size
-            alpha = 0.2
-            rnd = torch.from_numpy(np.random.beta(alpha,alpha,1)).type_as(x)
-            x = x[:int(num_batch/2)]*rnd + x[int(num_batch/2):]*(1-rnd)
+        #print(x.shape)
+        #print(y.shape)
+        #print(un_x.shape)
+        #if self.hparams.dataset.cutmix:
+        
+        # supervised phase
+        lam = np.random.beta(0.5, 0.5)
+        rand_index = torch.randperm(x.size()[0]).type_as(x).long()
+        bbx1, bby1, bbx2, bby2 = rand_bbox(x.size(), lam)
+        x[:, :, bbx1:bbx2, bby1:bby2] = x[rand_index, :, bbx1:bbx2, bby1:bby2]
+        y[:, :, bbx1:bbx2, bby1:bby2] = y[rand_index, :, bbx1:bbx2, bby1:bby2]
             
-        if self.hparams.dataset.cutmix:
-            lam = np.random.beta(0.5, 0.5)
-            rand_index = torch.randperm(x.size()[0]).type_as(x).long()
-            bbx1, bby1, bbx2, bby2 = rand_bbox(x.size(), lam)
-            x[:, :, bbx1:bbx2, bby1:bby2] = x[rand_index, :, bbx1:bbx2, bby1:bby2]
-            y[:, :, bbx1:bbx2, bby1:bby2] = y[rand_index, :, bbx1:bbx2, bby1:bby2]
+        y_hat = self.s_model(x)
+        sup_loss = self.criteria(y_hat, y)
+        
+        # un-supervised phase
+        lam = np.random.beta(0.5, 0.5)
+        rand_index = torch.randperm(un_x.size()[0]).type_as(un_x).long()
+        bbx1, bby1, bbx2, bby2 = rand_bbox(un_x.size(), lam)
+        
+        mixed_un_x = un_x.copy()
+        mixed_un_x[:, :, bbx1:bbx2, bby1:bby2] = un_x[rand_index, :, bbx1:bbx2, bby1:bby2]
+        
+        with torch.no_grad():
+            logits_u0_t = self.t_model(un_x).detach()
+            logits_u1_t = self.t_model(un_x[rand_index,:]).detach()
+            logits_unsup_t = logits_u0_t
+            logits_unsup_t[:, :, bbx1:bbx2, bby1:bby2] = logits_u1_t[:, :, bbx1:bbx2, bby1:bby2]
             
-        y_hat = self.model(x)
-        if self.hparams.dataset.mixup:
-            loss = self.criteria(y_hat, y[:int(num_batch/2)])*rnd + self.criteria(y_hat, y[int(num_batch/2):])*(1-rnd)
-        else:
-            loss = self.criteria(y_hat, y)
-        self.log('train_loss', loss, on_epoch=True)
-        return loss
+        logits_unsup_s = self.s_model(mixed_un_x)
+        # Logits -> probs
+        prob_unsup_t = F.softmax(logits_unsup_t, dim=1)
+        prob_unsup_s = F.softmax(logits_unsup_s, dim=1)
+        conf_thresh = 0.97
+        conf_per_pixel=False
+        if conf_thresh > 0.0:
+            # Compute confidence of teacher predictions
+            conf_tea = prob_unsup_t.max(dim=1)[0]
+            # Compute confidence mask
+            conf_mask = (conf_tea >= conf_thresh).float()[:, None, :, :]
+            # Record rate for reporting
+            conf_rate_acc += float(conf_mask.mean())
+            # Average confidence mask if requested
+            if not conf_per_pixel:
+                conf_mask = conf_mask.mean()
+            loss_mask = loss_mask * conf_mask
+        consistency_loss = robust_binary_crossentropy(prob_unsup_s, prob_unsup_t)
+        consistency_loss = (consistency_loss * loss_mask).mean()
+        self.t_optim.step()
+        
+        self.log('train_loss', sup_loss + consistency_loss, on_epoch=True)
+        return sup_loss + consistency_loss
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        y_hat = self.model(x)
+        y_hat = self.t_model(x)
         loss = self.criteria(y_hat, y)
         dice = 1-self.dice(y_hat, y)
 
@@ -98,7 +132,7 @@ class LitClassifier(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         x, y = batch
-        y_hat = self.model(x)
+        y_hat = self.t_model(x)
         loss = self.criteria(y_hat, y)
         self.log('test_loss', loss)
         
