@@ -14,6 +14,7 @@ from utils.preprocessing import *
 import shutil
 
 import torch.nn as nn, torch.nn.functional as F
+from copy import deepcopy
 
 class EMAWeightOptimizer(object):
     def __init__(self, target_net, source_net, ema_alpha):
@@ -37,6 +38,7 @@ class EMAWeightOptimizer(object):
         for tgt_p, src_p in zip(self.target_params, self.source_params):
             tgt_p.mul_(self.ema_alpha)
             tgt_p.add_(src_p * one_minus_alpha)
+            
 def robust_binary_crossentropy(pred, tgt, eps=1e-6):
     inv_tgt = 1.0 - tgt
     inv_pred = 1.0 - pred + eps
