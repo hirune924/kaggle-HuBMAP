@@ -88,7 +88,7 @@ class LitClassifier(pl.LightningModule):
             # Compute confidence mask
             conf_mask = (conf_tea >= conf_thresh).float()[:, None, :, :]
             # Record rate for reporting
-            conf_rate_acc += float(conf_mask.mean())
+            #conf_rate_acc += float(conf_mask.mean())
             # Average confidence mask if requested
             if not conf_per_pixel:
                 conf_mask = conf_mask.mean()
