@@ -92,8 +92,11 @@ class LitClassifier(pl.LightningModule):
             # Average confidence mask if requested
             if not conf_per_pixel:
                 conf_mask = conf_mask.mean()
-            loss_mask = loss_mask * conf_mask
+            #loss_mask = loss_mask * conf_mask
+            loss_mask = conf_mask
+            
         consistency_loss = robust_binary_crossentropy(prob_unsup_s, prob_unsup_t)
+        consistency_loss = consistency_loss.sum(dim=1, keepdim=True)
         consistency_loss = (consistency_loss * loss_mask).mean()
         self.t_optim.step()
         
