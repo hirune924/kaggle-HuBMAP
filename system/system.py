@@ -67,7 +67,7 @@ class LitClassifier(pl.LightningModule):
         rand_index = torch.randperm(un_x.size()[0]).type_as(un_x).long()
         bbx1, bby1, bbx2, bby2 = rand_bbox(un_x.size(), lam)
         
-        mixed_un_x = un_x.copy()
+        mixed_un_x = un_x.clone()
         mixed_un_x[:, :, bbx1:bbx2, bby1:bby2] = un_x[rand_index, :, bbx1:bbx2, bby1:bby2]
         
         with torch.no_grad():
