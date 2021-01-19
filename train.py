@@ -63,29 +63,6 @@ class MyLoader(object):
     # Customize the behavior of combining batches here.
     def combine_batch(self, batches):
       return batches
-
-class EMAWeightOptimizer (object):
-    def __init__(self, target_net, source_net, ema_alpha):
-        self.target_net = target_net
-        self.source_net = source_net
-        self.ema_alpha = ema_alpha
-        self.target_params = [p for p in target_net.state_dict().values() if p.dtype == torch.float]
-        self.source_params = [p for p in source_net.state_dict().values() if p.dtype == torch.float]
-
-        for tgt_p, src_p in zip(self.target_params, self.source_params):
-            tgt_p[...] = src_p[...]
-
-        target_keys = set(target_net.state_dict().keys())
-        source_keys = set(source_net.state_dict().keys())
-        if target_keys != source_keys:
-            raise ValueError('Source and target networks do not have the same state dict keys; do they have different architectures?')
-
-
-    def step(self):
-        one_minus_alpha = 1.0 - self.ema_alpha
-        for tgt_p, src_p in zip(self.target_params, self.source_params):
-            tgt_p.mul_(self.ema_alpha)
-            tgt_p.add_(src_p * one_minus_alpha)
             
 
 @hydra.main(config_path='config', config_name="config.yaml")
@@ -117,16 +94,14 @@ def main(cfg : DictConfig) -> None:
     #valid_callback = ValidWholeImageCallback(dataset['valid_img_id'], cfg.dataset, cfg.trainer.max_epochs/2, 10)
     
     # set model
-    s_model = get_model(cfg.model)
-    t_model = get_model(cfg.model)
-    t_optim = EMAWeightOptimizer(t_model, s_model, ema_alpha=0.99)
+    model = get_model(cfg.model)
     
     if cfg.model.ssl_model is not None:
         print('Loading ssl model: {}'.format(cfg.model.ssl_model))
         model.load_state_dict(custom_load(cfg.model.ssl_model), strict=False)
 
     # set lit system
-    lit_model = LitClassifier(hparams=cfg, s_model=s_model, t_model=t_model, t_optim=t_optim)
+    lit_model = LitClassifier(hparams=cfg, model=model)
 
     # set trainer
     trainer = Trainer(
