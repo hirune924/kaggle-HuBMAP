@@ -16,28 +16,33 @@ import shutil
 import torch.nn as nn, torch.nn.functional as F
 from copy import deepcopy
 
-class EMAWeightOptimizer(object):
-    def __init__(self, target_net, source_net, ema_alpha):
-        self.target_net = target_net
-        self.source_net = source_net
-        self.ema_alpha = ema_alpha
-        self.target_params = [p for p in target_net.state_dict().values() if p.dtype == torch.float]
-        self.source_params = [p for p in source_net.state_dict().values() if p.dtype == torch.float]
+class EMA:
+    """
+    The module for exponential moving average
+    """
 
-        for tgt_p, src_p in zip(self.target_params, self.source_params):
-            tgt_p[...] = src_p[...]
+    def __init__(self, model, ema_model, decay=0.999):
+        self.decay = decay
+        self.params = list(model.state_dict().values())
+        self.ema_params = list(ema_model.state_dict().values())
 
-        target_keys = set(target_net.state_dict().keys())
-        source_keys = set(source_net.state_dict().keys())
-        if target_keys != source_keys:
-            raise ValueError('Source and target networks do not have the same state dict keys; do they have different architectures?')
-
+        # some of the quantity in batch norm is LongTensor,
+        # we have to make them become float, or it will cause the
+        # type error in mul_ or add_ in self.step()
+        for p in ema_model.parameters():
+            p.detach_()
+        for i in range(len(self.ema_params)):
+            self.ema_params[i] = self.ema_params[i].float()
 
     def step(self):
-        one_minus_alpha = 1.0 - self.ema_alpha
-        for tgt_p, src_p in zip(self.target_params, self.source_params):
-            tgt_p.mul_(self.ema_alpha)
-            tgt_p.add_(src_p * one_minus_alpha)
+        # average all the paramters, including the running mean and
+        # running std in batchnormalization
+        for param, ema_param in zip(self.params, self.ema_params):
+            # if param.dtype == torch.float32:
+            ema_param.mul_(self.decay)
+            ema_param.add_(param * (1 - self.decay))
+            # if param.dtype == torch.float32:
+            #     param.mul_(1 - 4e-5)
             
 def robust_binary_crossentropy(pred, tgt, eps=1e-6):
     inv_tgt = 1.0 - tgt
@@ -57,7 +62,7 @@ class LitClassifier(pl.LightningModule):
     def on_train_start(self):
         # model will put in GPU before this function
         # so we initiate EMA and WeightDecayModule here
-        self.ema = EMAWeightOptimizer(self.s_model, self.t_model, 0.999)
+        self.ema = EMA(self.s_model, self.t_model, 0.999)
         # self.wdm = WeightDecayModule(self.classifier, self.hparams.weight_decay, ["bn", "bias"])
 
     def on_train_batch_end(self, *args, **kwargs):
