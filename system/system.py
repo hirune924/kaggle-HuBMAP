@@ -33,10 +33,10 @@ class LitClassifier(pl.LightningModule):
 
     def forward(self, x):
         # use forward for inference/predictions
-        return self.model(x)
+        return self.t_model(x)
 
     def configure_optimizers(self):
-        optimizer = get_optimizer(self.model.parameters(), self.hparams.training.optimizer)
+        optimizer = get_optimizer(self.s_model.parameters(), self.hparams.training.optimizer)
 
         scheduler = get_scheduler(optimizer, self.hparams.training.scheduler)
         
