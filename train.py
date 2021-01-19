@@ -119,7 +119,7 @@ def main(cfg : DictConfig) -> None:
     # set model
     s_model = get_model(cfg.model)
     t_model = get_model(cfg.model)
-    t_optim = EMAWeightOptimizer(t_model, s_model, teacher_alpha=0.99)
+    t_optim = EMAWeightOptimizer(t_model, s_model, ema_alpha=0.99)
     
     if cfg.model.ssl_model is not None:
         print('Loading ssl model: {}'.format(cfg.model.ssl_model))
