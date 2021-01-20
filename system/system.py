@@ -142,7 +142,8 @@ class LitClassifier(pl.LightningModule):
             
         consistency_loss = robust_binary_crossentropy(prob_unsup_s, prob_unsup_t)
         consistency_loss = consistency_loss.sum(dim=1, keepdim=True)
-        consistency_loss = (consistency_loss * loss_mask).mean()
+        #consistency_loss = (consistency_loss * loss_mask).mean()
+        consistency_loss = consistency_loss.mean()
         
         self.log('train_loss', sup_loss + consistency_loss, on_epoch=True)
         return sup_loss + consistency_loss
