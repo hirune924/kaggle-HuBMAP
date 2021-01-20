@@ -94,7 +94,8 @@ class LitClassifier(pl.LightningModule):
         #if self.hparams.dataset.cutmix:
         
         # supervised phase
-        lam = np.random.beta(0.5, 0.5)
+        #lam = np.random.beta(0.5, 0.5)
+        lam = np.random.beta(1.0, 1.0)
         rand_index = torch.randperm(x.size()[0]).type_as(x).long()
         bbx1, bby1, bbx2, bby2 = rand_bbox(x.size(), lam)
         x[:, :, bbx1:bbx2, bby1:bby2] = x[rand_index, :, bbx1:bbx2, bby1:bby2]
@@ -104,18 +105,21 @@ class LitClassifier(pl.LightningModule):
         sup_loss = self.criteria(y_hat, y)
         
         # un-supervised phase
-        lam = np.random.beta(0.5, 0.5)
+        #lam = np.random.beta(0.5, 0.5)
         rand_index = torch.randperm(un_x.size()[0]).type_as(un_x).long()
-        bbx1, bby1, bbx2, bby2 = rand_bbox(un_x.size(), lam)
+        bbox_list = rand_bbox_multi(un_x.size(), np.random.randint(4,10))
         
         mixed_un_x = un_x.clone()
-        mixed_un_x[:, :, bbx1:bbx2, bby1:bby2] = un_x[rand_index, :, bbx1:bbx2, bby1:bby2]
+        for l in bbox_list:
+            mixed_un_x[:, :, l[0]:l[1], l[2]:l[3]] = un_x[rand_index, :, l[4]:l[5], l[6]:l[7]]
         
         with torch.no_grad():
             logits_u0_t = self.t_model(un_x).detach()
             logits_u1_t = self.t_model(un_x[rand_index,:]).detach()
             logits_unsup_t = logits_u0_t
-            logits_unsup_t[:, :, bbx1:bbx2, bby1:bby2] = logits_u1_t[:, :, bbx1:bbx2, bby1:bby2]
+            for l in bbox_list:
+                logits_unsup_t[:, :, l[0]:l[1], l[2]:l[3]] = logits_u1_t[rand_index, :, l[4]:l[5], l[6]:l[7]]
+            #logits_unsup_t[:, :, bbx1:bbx2, bby1:bby2] = logits_u1_t[:, :, bbx1:bbx2, bby1:bby2]
             
         logits_unsup_s = self.s_model(mixed_un_x)
         # Logits -> probs
@@ -197,4 +201,34 @@ def rand_bbox(size, lam):
 
     return bbx1, bby1, bbx2, bby2
 
-    
+
+def rand_bbox_multi(size, num_box):
+    W = size[2]
+    H = size[3]
+    bbox_list = []
+    size_list = []
+    for i in range(num_box):
+        cut_rat_h = np.random.beta(1.0, 1.0)/2
+        cut_rat_w = np.random.beta(1.0, 1.0)/2
+        cut_w = np.int(W * cut_rat_w)
+        cut_h = np.int(H * cut_rat_h)
+
+        # uniform
+        cx0 = np.random.randint(W-cut_w)
+        cy0 = np.random.randint(H-cut_h)
+        cx1 = np.random.randint(W-cut_w)
+        cy1 = np.random.randint(H-cut_h)
+
+        bbx1_0 = cx0
+        bbx2_0 = cx0 + cut_w
+        bby1_0 = cy0
+        bby2_0 = cy0 + cut_h
+        bbx1_1 = cx1
+        bbx2_1 = cx1 + cut_w
+        bby1_1 = cy1
+        bby2_1 = cy1 + cut_h
+        
+        bbox_list += [[bbx1_0, bbx2_0, bby1_0, bby2_0, bbx1_1, bbx2_1, bby1_1, bby2_1]]
+        size_list += [-cut_w*cut_h]
+        
+    return np.asarray(bbox_list)[np.argsort(size_list)]
