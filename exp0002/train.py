@@ -67,7 +67,7 @@ conf_dict = {'batch_size': 8,#32,
              'csv_path': '../input/extract-test/train.csv',
              'data_dir': '../input/extract-test/size_2048',
              'output_dir': './',
-             'use_mask_exist': False,
+             'use_mask_exist': True,
              'trainer': {}}
 conf_base = OmegaConf.create(conf_dict)
 
@@ -136,7 +136,10 @@ class HuBMAPDataModule(pl.LightningDataModule):
                 for index, row in tqdm(train_df.iterrows()):
                     if np.sum(cv2.imread(row['mask'])) == 0:
                         remove_index.append(index)
+                train_nomask_df = train_df.loc[remove_index]
                 train_df = train_df.drop(remove_index)
+                print(len(train_nomask_df))#1950
+                print(len(train_df))#1108
             
             valid_image_list = []
             for index, row in valid_df.iterrows():
@@ -181,13 +184,17 @@ class HuBMAPDataModule(pl.LightningDataModule):
                         ])
 
             self.train_dataset = HuBMAPDataset(train_df, transform=train_transform)
+            self.train_nomask_dataset = HuBMAPDataset(train_nomask_df, transform=train_transform)
             self.valid_dataset = HuBMAPDataset(valid_df, transform=valid_transform)
             
         elif stage == 'test':
             pass
         
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.conf.batch_size, num_workers=4, shuffle=True, pin_memory=True, drop_last=True)
+        mask_batch = int(self.conf.batch_size*0.8)
+        no_mask_batch = self.conf.batch_size - int(self.conf.batch_size*0.8)
+        return [DataLoader(self.train_dataset, batch_size=mask_batch, num_workers=4, shuffle=True, pin_memory=True, drop_last=True),
+                DataLoader(self.train_nomask_dataset, batch_size=no_mask_batch, num_workers=4, shuffle=True, pin_memory=True, drop_last=True)]
 
     def val_dataloader(self):
         return DataLoader(self.valid_dataset, batch_size=self.conf.batch_size, num_workers=4, shuffle=False, pin_memory=True, drop_last=True)
@@ -223,7 +230,10 @@ class LitSystem(pl.LightningModule):
         return [optimizer], [scheduler]
 
     def training_step(self, batch, batch_idx):
-        x, y = batch
+        x1, y1 = batch[0]
+        x2, y2 = batch[1]
+        x, y = torch.cat([x1, x2], dim=0), torch.cat([y1, y2], dim=0) 
+        
         
         # cutmix
         lam = np.random.beta(0.5, 0.5)
@@ -288,6 +298,7 @@ def main():
         precision=16,
         num_sanity_val_steps=10,
         val_check_interval=1.0,
+        multiple_trainloader_mode='min_size',
         **conf.trainer
             )
 
