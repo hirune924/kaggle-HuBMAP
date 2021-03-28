@@ -214,8 +214,8 @@ class LitSystem(pl.LightningModule):
         self.save_hyperparameters(conf)
         self.model = smp.Unet(encoder_name=conf.encoder_name, in_channels=3, classes=1)
         self.bceloss = torch.nn.BCEWithLogitsLoss()
-        #self.diceloss = DiceLoss()
-        self.diceloss = smp.utils.losses.DiceLoss(activation='sigmoid')
+        self.diceloss = DiceLoss()
+        #self.diceloss = smp.utils.losses.DiceLoss(activation='sigmoid')
         self.dice =  smp.utils.losses.DiceLoss(activation='sigmoid')
 
     def forward(self, x):
