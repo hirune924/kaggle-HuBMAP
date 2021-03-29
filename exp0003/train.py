@@ -191,10 +191,10 @@ class HuBMAPDataModule(pl.LightningDataModule):
             pass
         
     def train_dataloader(self):
-        mask_batch = int(self.conf.batch_size*0.8)
-        no_mask_batch = self.conf.batch_size - int(self.conf.batch_size*0.8)
-        return [DataLoader(self.train_dataset, batch_size=mask_batch, num_workers=4, shuffle=True, pin_memory=True, drop_last=True),
-                DataLoader(self.train_nomask_dataset, batch_size=no_mask_batch, num_workers=4, shuffle=True, pin_memory=True, drop_last=True)]
+        #mask_batch = int(self.conf.batch_size*0.8)
+        #no_mask_batch = self.conf.batch_size - int(self.conf.batch_size*0.8)
+        return [DataLoader(self.train_dataset, batch_size=self.conf.batch_size, num_workers=4, shuffle=True, pin_memory=True, drop_last=True),
+                DataLoader(self.train_nomask_dataset, batch_size=self.conf.batch_size, num_workers=4, shuffle=True, pin_memory=True, drop_last=True)]
 
     def val_dataloader(self):
         return DataLoader(self.valid_dataset, batch_size=self.conf.batch_size, num_workers=4, shuffle=False, pin_memory=True, drop_last=True)
@@ -231,10 +231,9 @@ class LitSystem(pl.LightningModule):
         return [optimizer], [scheduler]
 
     def training_step(self, batch, batch_idx):
-        x1, y1 = batch[0]
+        x, y = batch[0]
         x2, y2 = batch[1]
-        x, y = torch.cat([x1, x2], dim=0), torch.cat([y1, y2], dim=0) 
-        
+        #x, y = torch.cat([x1, x2], dim=0), torch.cat([y1, y2], dim=0) 
         
         # cutmix
         lam = np.random.beta(0.5, 0.5)
@@ -243,8 +242,14 @@ class LitSystem(pl.LightningModule):
         x[:, :, bbx1:bbx2, bby1:bby2] = x[rand_index, :, bbx1:bbx2, bby1:bby2]
         y[:, :, bbx1:bbx2, bby1:bby2] = y[rand_index, :, bbx1:bbx2, bby1:bby2]
 
+        # mixnoise
+        lam = np.minimum(np.random.beta(0.5, 0.5), 0.25)
+        x = lam * x + (1 - lam) * x2
+        
+        
         y_hat = self.model(x)
-        loss = self.diceloss(y_hat, y) + self.bceloss(y_hat, y)
+        #loss = self.diceloss(y_hat, y) + self.bceloss(y_hat, y)
+        loss = self.bceloss(y_hat, y)
         
         self.log('train_loss', loss, on_epoch=True)
         return loss
@@ -252,7 +257,8 @@ class LitSystem(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self.model(x)
-        loss = self.diceloss(y_hat, y) + self.bceloss(y_hat, y)
+        #loss = self.diceloss(y_hat, y) + self.bceloss(y_hat, y)
+        loss = self.bceloss(y_hat, y)
         dice = 1-self.dice(y_hat, y)
         
         return {
