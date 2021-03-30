@@ -250,8 +250,8 @@ class LitSystem(pl.LightningModule):
         
         
         y_hat = self.model(x)
-        #loss = self.diceloss(y_hat, y) + self.bceloss(y_hat, y)
-        loss = self.bceloss(y_hat, y)
+        loss = self.diceloss(y_hat, y) + self.bceloss(y_hat, y)
+        #loss = self.bceloss(y_hat, y)
         
         self.log('train_loss', loss, on_epoch=True)
         return loss
