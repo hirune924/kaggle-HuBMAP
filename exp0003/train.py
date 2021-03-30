@@ -243,9 +243,10 @@ class LitSystem(pl.LightningModule):
         y[:, :, bbx1:bbx2, bby1:bby2] = y[rand_index, :, bbx1:bbx2, bby1:bby2]
 
         # mixnoise
-        lam = np.minimum(np.random.beta(1.0, 1.0), 0.25)
+        #lam = np.minimum(np.random.beta(1.0, 1.0), 0.25)
+        lam = np.random.beta(1.0, 1.0)/4 + 0.75
         x = lam * x + (1 - lam) * x2
-        y = lam * y + (1 - lam) * y2
+        #y = lam * y + (1 - lam) * y2
         
         
         y_hat = self.model(x)
