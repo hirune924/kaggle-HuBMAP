@@ -216,7 +216,7 @@ class LitSystem(pl.LightningModule):
         self.bceloss = torch.nn.BCEWithLogitsLoss()
         self.lovaszloss = smp.losses.LovaszLoss(mode='binary')
         #self.diceloss = smp.utils.losses.DiceLoss(activation='sigmoid')
-        self.dice =  smp.losses.DiceLoss()
+        self.dice =  smp.losses.DiceLoss(mode='binary')
 
     def forward(self, x):
         # use forward for inference/predictions
