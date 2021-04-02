@@ -214,7 +214,7 @@ class LitSystem(pl.LightningModule):
         self.save_hyperparameters(conf)
         self.model = smp.Unet(encoder_name=conf.encoder_name, in_channels=3, classes=1)
         self.bceloss = torch.nn.BCEWithLogitsLoss()
-        self.lovaszloss = smp.losses.LovaszLoss(mode='binary')
+        self.lovaszloss = smp.losses.LovaszLoss(mode='binary', per_image=True)
         #self.diceloss = smp.utils.losses.DiceLoss(activation='sigmoid')
         self.dice =  smp.losses.DiceLoss(mode='binary')
 
