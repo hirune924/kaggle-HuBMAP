@@ -244,7 +244,10 @@ class LitSystem(pl.LightningModule):
         y[:, :, bbx1:bbx2, bby1:bby2] = y[rand_index, :, bbx1:bbx2, bby1:bby2]
 
         y_hat = self.model(x)
-        loss = self.lovaszloss(y_hat, y) + self.bceloss(y_hat, y)
+        if self.current_epoch < self.hparams.epoch * 0.3333:
+            loss = self.dice(y_hat, y) + self.bceloss(y_hat, y)
+        else:
+            loss = self.lovaszloss(y_hat, y)# + self.bceloss(y_hat, y)
         
         self.log('train_loss', loss, on_epoch=True)
         return loss
@@ -252,7 +255,10 @@ class LitSystem(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self.model(x)
-        loss = self.lovaszloss(y_hat, y) + self.bceloss(y_hat, y)
+        if self.current_epoch < self.hparams.epoch * 0.3333:
+            loss = self.dice(y_hat, y) + self.bceloss(y_hat, y)
+        else:
+            loss = self.lovaszloss(y_hat, y)# + self.bceloss(y_hat, y)
         dice = 1-self.dice(y_hat, y)
         
         return {
