@@ -31,6 +31,8 @@ from sklearn.metrics import roc_auc_score
 from tqdm import tqdm 
 from PIL import Image
 
+import lovasz_losses as L
+
 cv2.setNumThreads(0)
 ####################
 # Utils
@@ -266,7 +268,12 @@ class LitSystem(pl.LightningModule):
         #loss = self.lovaszloss(y_hat, y)# + self.bceloss(y_hat, y)
         
         #loss = self.lovaszloss(y_hat, y) + self.lovaszloss(-y_hat, 1-y)
-        loss = self.lovaszloss(torch.sigmoid(y_hat)*2-1, y)
+        #loss = self.lovaszloss(torch.sigmoid(y_hat)*2-1, y)
+        
+        # normal
+        loss = L.lovasz_hinge(y_hat, y)
+        # sigmoid
+        #loss = L.lovasz_softmax(torch.sigmoid(y_hat), labels, classes=[1])
         
         self.log('train_loss', loss, on_epoch=True)
         return loss
@@ -281,7 +288,11 @@ class LitSystem(pl.LightningModule):
         
         #loss = self.lovaszloss(y_hat, y) + self.lovaszloss(-y_hat, 1-y)
         
-        loss = self.lovaszloss(torch.sigmoid(y_hat)*2-1, y)
+        #loss = self.lovaszloss(torch.sigmoid(y_hat)*2-1, y)
+        # normal
+        loss = L.lovasz_hinge(y_hat, y)
+        # sigmoid
+        #loss = L.lovasz_softmax(torch.sigmoid(y_hat), labels, classes=[1])
         
         dice = 1-self.dice(y_hat, y)
         
