@@ -263,7 +263,9 @@ class LitSystem(pl.LightningModule):
         #if self.current_epoch < self.hparams.epoch * 0.6666:
         #    loss = self.dice(y_hat, y) + self.bceloss(y_hat, y)
         #else:
-        loss = self.lovaszloss(y_hat, y)# + self.bceloss(y_hat, y)
+        #loss = self.lovaszloss(y_hat, y)# + self.bceloss(y_hat, y)
+        
+        loss = self.lovaszloss(y_hat, y) + self.lovaszloss(-y_hat, 1-y)
         
         self.log('train_loss', loss, on_epoch=True)
         return loss
@@ -274,7 +276,10 @@ class LitSystem(pl.LightningModule):
         #if self.current_epoch < self.hparams.epoch * 0.6666:
         #    loss = self.dice(y_hat, y) + self.bceloss(y_hat, y)
         #else:
-        loss = self.lovaszloss(y_hat, y)# + self.bceloss(y_hat, y)
+        #loss = self.lovaszloss(y_hat, y)# + self.bceloss(y_hat, y)
+        
+        loss = self.lovaszloss(y_hat, y) + self.lovaszloss(-y_hat, 1-y)
+        
         dice = 1-self.dice(y_hat, y)
         
         return {
