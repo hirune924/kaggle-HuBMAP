@@ -273,7 +273,9 @@ class LitSystem(pl.LightningModule):
         # normal
         #loss = L.lovasz_hinge(y_hat, y)
         # sigmoid
-        loss = L.lovasz_softmax(torch.sigmoid(y_hat), y, classes=[1])
+        #loss = L.lovasz_softmax(torch.sigmoid(y_hat), y, classes=[1])
+        # sym sigmoid
+        loss = L.lovasz_softmax(torch.sigmoid(y_hat), y, classes=[1]) + L.lovasz_softmax(1-torch.sigmoid(y_hat), 1-y, classes=[1])
         
         self.log('train_loss', loss, on_epoch=True)
         return loss
@@ -292,7 +294,9 @@ class LitSystem(pl.LightningModule):
         # normal
         #loss = L.lovasz_hinge(y_hat, y)
         # sigmoid
-        loss = L.lovasz_softmax(torch.sigmoid(y_hat), y, classes=[1])
+        #loss = L.lovasz_softmax(torch.sigmoid(y_hat), y, classes=[1])
+        # sym sigmoid
+        loss = L.lovasz_softmax(torch.sigmoid(y_hat), y, classes=[1]) + L.lovasz_softmax(1-torch.sigmoid(y_hat), 1-y, classes=[1])
         
         dice = 1-self.dice(y_hat, y)
         
