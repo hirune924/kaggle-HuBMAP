@@ -31,7 +31,13 @@ from sklearn.metrics import roc_auc_score
 from tqdm import tqdm 
 from PIL import Image
 
+# for loss
 import lovasz_losses as L
+
+from dataloader import dist_map_transform
+from losses import BoundaryLoss
+from utils import one_hot2dist
+
 
 cv2.setNumThreads(0)
 ####################
@@ -110,7 +116,9 @@ class HuBMAPDataset(Dataset):
         image = torch.from_numpy(trans["image"].transpose(2, 0, 1))
         mask = torch.from_numpy(trans["mask"]).unsqueeze(dim=0).float()
         
-        return image, mask
+        dist = torch.from_numpy(one_hot2dist(trans["mask"])).float()
+        
+        return image, mask, dist
            
 ####################
 # Data Module
