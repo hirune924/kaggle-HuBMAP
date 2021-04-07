@@ -197,7 +197,7 @@ class HuBMAPDataModule(pl.LightningDataModule):
                 DataLoader(self.train_nomask_dataset, batch_size=no_mask_batch, num_workers=4, shuffle=True, pin_memory=True, drop_last=True)]
 
     def val_dataloader(self):
-        return DataLoader(self.valid_dataset, batch_size=self.conf.batch_size, num_workers=4, shuffle=False, pin_memory=True, drop_last=True)
+        return DataLoader(self.valid_dataset, batch_size=int(self.conf.batch_size/4), num_workers=4, shuffle=False, pin_memory=True, drop_last=True)
 
     def test_dataloader(self):
         return DataLoader(self.test_dataset, batch_size=self.conf.batch_size, num_workers=4, shuffle=False, pin_memory=True, drop_last=False)
