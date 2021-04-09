@@ -18,4 +18,7 @@
  * lossを少し変えてみてどうなるかを見てみたい
  * CV的にはsymmetric lovasz sigmoidが良かったけどLBはそんなに上がらんかった？
 
+# exp0005
+ * exp0003からの派生、hard DA
+
 
