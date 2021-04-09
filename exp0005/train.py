@@ -245,7 +245,7 @@ class LitSystem(pl.LightningModule):
         # mixnoise
         #lam = np.minimum(np.random.beta(1.0, 1.0), 0.25)
         #lam = np.random.beta(1.0, 1.0)/4 + 0.75
-        lam =　1 - (np.random.beta(1.0, 1.0) * (self.current_epoch/self.hparams.epoch) * 0.75)
+        lam = 1 - (np.random.beta(1.0, 1.0) * (self.current_epoch/self.hparams.epoch) * 0.75)
         x = lam * x + (1 - lam) * x2
         #y = lam * y + (1 - lam) * y2
         
