@@ -153,24 +153,24 @@ class HuBMAPDataModule(pl.LightningDataModule):
                         A.Resize(height=self.conf.image_size, width=self.conf.image_size, p=1),
                         A.Flip(p=0.5),
                         A.ShiftScaleRotate(p=0.5),
-                        A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=10, val_shift_limit=10, p=0.7),
-                        A.RandomBrightnessContrast(brightness_limit=(-0.2,0.2), contrast_limit=(-0.2, 0.2), p=0.7),
+                        A.HueSaturationValue(hue_shift_limit=20, sat_shift_limit=20, val_shift_limit=20, p=0.7),
+                        A.RandomBrightnessContrast(brightness_limit=(-0.4,0.4), contrast_limit=(-0.4, 0.4), p=0.7),
                         A.CLAHE(clip_limit=(1,4), p=0.5),
                         A.OneOf([
-                            A.OpticalDistortion(distort_limit=1.0),
-                            A.GridDistortion(num_steps=5, distort_limit=1.),
-                            A.ElasticTransform(alpha=3),
+                            A.OpticalDistortion(distort_limit=1.0, p=1.0),
+                            A.GridDistortion(num_steps=5, distort_limit=1., p=1.0),
+                            A.ElasticTransform(alpha=3, p=1.0),
                         ], p=0.50),
                         A.OneOf([
-                            A.GaussNoise(var_limit=[10, 50]),
-                            A.GaussianBlur(),
-                            A.MotionBlur(),
-                            A.MedianBlur(),
+                            A.GaussNoise(var_limit=[10, 50], p=1.0),
+                            A.GaussianBlur(p=1.0),
+                            A.MotionBlur(p=1.0),
+                            A.MedianBlur(p=1.0),
                         ], p=0.50),
                         #A.Resize(size, size),
                         A.OneOf([
-                            A.JpegCompression(quality_lower=95, quality_upper=100, p=0.50),
-                            A.Downscale(scale_min=0.75, scale_max=0.95),
+                            A.JpegCompression(quality_lower=95, quality_upper=100, p=1.0),
+                            A.Downscale(scale_min=0.75, scale_max=0.95, p=1.0),
                         ], p=0.5),
                         A.IAAPiecewiseAffine(p=0.5),
                         A.IAASharpen(p=0.5),
@@ -244,7 +244,8 @@ class LitSystem(pl.LightningModule):
 
         # mixnoise
         #lam = np.minimum(np.random.beta(1.0, 1.0), 0.25)
-        lam = np.random.beta(1.0, 1.0)/4 + 0.75
+        #lam = np.random.beta(1.0, 1.0)/4 + 0.75
+        lam =　1 - (np.random.beta(1.0, 1.0) * (self.current_epoch/self.hparams.epoch) * 0.75)
         x = lam * x + (1 - lam) * x2
         #y = lam * y + (1 - lam) * y2
         
