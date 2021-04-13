@@ -146,8 +146,8 @@ def split_save_image_mask(image, mask, size, save_dir, img_id):
     for h in range(num_split_h):
         for w in range(num_split_w):
             if np.sum(image[h*size:(h+1)*size, w*size:(w+1)*size, :])!=0:
-                Image.fromarray(image[h*size:(h+1)*size, w*size:(w+1)*size, :]).save(os.path.join(save_dir,'size_{}/w{}-h{}-{}_image.png'.format(size,w,h,os.path.basename(img_id)[:-5])))
-                Image.fromarray(mask[h*size:(h+1)*size, w*size:(w+1)*size]).save(os.path.join(save_dir,'size_{}/w{}-h{}-{}_mask.png'.format(size,w,h,os.path.basename(img_id)[:-5])))
+                Image.fromarray(image[h*size:(h+1)*size, w*size:(w+1)*size, :]).save(os.path.join(save_dir,'size_{}/w{}-h{}-{}_image.png'.format(size,w,h,os.path.basename(img_id))))
+                Image.fromarray(mask[h*size:(h+1)*size, w*size:(w+1)*size]).save(os.path.join(save_dir,'size_{}/w{}-h{}-{}_mask.png'.format(size,w,h,os.path.basename(img_id))))
     return
 
 
@@ -164,8 +164,8 @@ def main(args):
         if(img.shape[0] == 3):
             img = np.transpose(img, (1,2,0))
 
-        #encoding = row['predicted']
-        encoding = row['encoding']
+        encoding = row['predicted']
+        #encoding = row['encoding']
         mask = rle2mask(encoding,(img.shape[1],img.shape[0]))
 
         split_save_image_mask(img, mask, args.size, args.save_dir, os.path.basename(row['id']))
