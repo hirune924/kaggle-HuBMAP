@@ -158,13 +158,13 @@ def main(args):
     for idx, row in train.iterrows():
         #print(row['id'])
         #print(row['encoding'])
-        #img_name = os.path.join(args.data_dir, os.path.basename(row['id']))
-        img_name = row['id']
+        img_name = os.path.join(args.data_dir, os.path.basename(row['id'])+'.tiff')
+        #img_name = row['id']
         img = np.squeeze(tiff.imread(img_name))
         if(img.shape[0] == 3):
             img = np.transpose(img, (1,2,0))
 
-        encoding = row['encoding']
+        encoding = row['predicted']
         mask = rle2mask(encoding,(img.shape[1],img.shape[0]))
 
         split_save_image_mask(img, mask, args.size, args.save_dir, os.path.basename(row['id']))
