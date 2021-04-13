@@ -20,5 +20,8 @@
 
 # exp0005
  * exp0003からの派生、hard DA
+ * LB 0.922....
 
+# exp0006
+ * exp0002からの派生でtest画像だけで学習->exp0002からの派生でtrain画像でfinetune
 
