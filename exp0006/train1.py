@@ -66,6 +66,8 @@ conf_dict = {'batch_size': 8,#32,
              'fold': 0,
              'csv_path': '../input/extract-test/train.csv',
              'data_dir': '../input/extract-test/size_2048',
+             'test_csv_path': '../input/extract-test/train.csv',
+             'test_data_dir': '../input/extract-test/size_2048',
              'output_dir': './',
              'use_mask_exist': True,
              'trainer': {}}
@@ -121,12 +123,12 @@ class HuBMAPDataModule(pl.LightningDataModule):
                 df.loc[val_index, "fold"] = int(fold)
             df["fold"] = df["fold"].astype(int)
                 
-            train_df = df[df['fold'] != self.conf.fold]
+            train_df = pd.read_csv(self.conf.test_csv_path)#df[df['fold'] != self.conf.fold]
             valid_df = df[df['fold'] == self.conf.fold]
             
             train_image_list = []
             for index, row in train_df.iterrows():
-                train_image_list += glob.glob(os.path.join(self.conf.data_dir, "*" + row['id'] + "_image.png"))
+                train_image_list += glob.glob(os.path.join(self.conf.test_data_dir, "*" + row['id'] + "_image.png"))
             train_df = pd.DataFrame({'image': train_image_list})
             train_df['mask'] = train_df['image'].str[:-9]+'mask.png'
             
