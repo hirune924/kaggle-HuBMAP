@@ -164,8 +164,8 @@ def main(args):
         if(img.shape[0] == 3):
             img = np.transpose(img, (1,2,0))
 
-        encoding = row['predicted']
-        #encoding = row['encoding']
+        #encoding = row['predicted']
+        encoding = row['encoding']
         mask = rle2mask(encoding,(img.shape[1],img.shape[0]))
 
         split_save_image_mask(img, mask, args.size, args.save_dir, os.path.basename(row['id']))
