@@ -122,12 +122,21 @@ class HuBMAPDataModule(pl.LightningDataModule):
             for fold, (train_index, val_index) in enumerate(kf.split(df.values)):
                 df.loc[val_index, "fold"] = int(fold)
             df["fold"] = df["fold"].astype(int)
-                
-            train_df = pd.read_csv(self.conf.test_csv_path)#df[df['fold'] != self.conf.fold]
+            
+            train_df = df[df['fold'] != self.conf.fold]
             valid_df = df[df['fold'] == self.conf.fold]
             
             train_image_list = []
             for index, row in train_df.iterrows():
+                train_image_list += glob.glob(os.path.join(self.conf.data_dir, "*" + row['id'] + "_image.png"))
+            #train_df = pd.DataFrame({'image': train_image_list})
+            #train_df['mask'] = train_df['image'].str[:-9]+'mask.png'
+            
+            ## add test    
+            test_df = pd.read_csv(self.conf.test_csv_path)#df[df['fold'] != self.conf.fold]
+            
+            #test_image_list = []
+            for index, row in test_df.iterrows():
                 train_image_list += glob.glob(os.path.join(self.conf.test_data_dir, "*" + row['id'] + "_image.png"))
             train_df = pd.DataFrame({'image': train_image_list})
             train_df['mask'] = train_df['image'].str[:-9]+'mask.png'
