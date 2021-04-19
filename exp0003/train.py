@@ -216,7 +216,8 @@ class LitSystem(pl.LightningModule):
         self.bceloss = torch.nn.BCEWithLogitsLoss()
         self.diceloss = DiceLoss()
         #self.diceloss = smp.utils.losses.DiceLoss(activation='sigmoid')
-        self.dice =  smp.utils.losses.DiceLoss(activation='sigmoid')
+        #self.dice =  smp.utils.losses.DiceLoss(activation='sigmoid')
+        self.dice =  smp.utils.losses.DiceLoss(activation=None)
 
     def forward(self, x):
         # use forward for inference/predictions
@@ -261,7 +262,7 @@ class LitSystem(pl.LightningModule):
         y_hat = self.model(x)
         #loss = self.diceloss(y_hat, y) + self.bceloss(y_hat, y)
         loss = self.bceloss(y_hat, y)
-        dice = 1-self.dice(y_hat, y)
+        dice = 1-self.dice((torch.sigmoid(y_hat)>0.5).float(), y)
         
         return {
             "val_loss": loss,
