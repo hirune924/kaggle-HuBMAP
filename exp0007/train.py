@@ -31,6 +31,8 @@ from sklearn.metrics import roc_auc_score
 from tqdm import tqdm 
 from PIL import Image
 
+from kornia.morphology import erosion
+
 cv2.setNumThreads(0)
 ####################
 # Utils
@@ -212,7 +214,7 @@ class LitSystem(pl.LightningModule):
         super().__init__()
         #self.conf = conf
         self.save_hyperparameters(conf)
-        self.model = smp.Unet(encoder_name=conf.encoder_name, in_channels=3, classes=1)
+        self.model = smp.Unet(encoder_name=conf.encoder_name, in_channels=3, classes=2)
         self.bceloss = torch.nn.BCEWithLogitsLoss()
         self.diceloss = DiceLoss()
         #self.diceloss = smp.utils.losses.DiceLoss(activation='sigmoid')
@@ -236,45 +238,54 @@ class LitSystem(pl.LightningModule):
         x2, y2 = batch[1]
         #x, y = torch.cat([x1, x2], dim=0), torch.cat([y1, y2], dim=0) 
         
-        # cutmix
-        lam = np.random.beta(0.5, 0.5)
-        rand_index = torch.randperm(x.size()[0]).type_as(x).long()
-        bbx1, bby1, bbx2, bby2 = rand_bbox(x.size(), lam)
-        x[:, :, bbx1:bbx2, bby1:bby2] = x[rand_index, :, bbx1:bbx2, bby1:bby2]
-        y[:, :, bbx1:bbx2, bby1:bby2] = y[rand_index, :, bbx1:bbx2, bby1:bby2]
+        if (self.hparams.epoch - self.current_epoch) > 5:
+            # cutmix
+            lam = np.random.beta(0.5, 0.5)
+            rand_index = torch.randperm(x.size()[0]).type_as(x).long()
+            bbx1, bby1, bbx2, bby2 = rand_bbox(x.size(), lam)
+            x[:, :, bbx1:bbx2, bby1:bby2] = x[rand_index, :, bbx1:bbx2, bby1:bby2]
+            y[:, :, bbx1:bbx2, bby1:bby2] = y[rand_index, :, bbx1:bbx2, bby1:bby2]
 
-        # mixnoise
-        #lam = np.minimum(np.random.beta(1.0, 1.0), 0.25)
-        lam = np.random.beta(1.0, 1.0)/4 + 0.75
-        x = lam * x + (1 - lam) * x2
-        #y = lam * y + (1 - lam) * y2
+            # mixnoise
+            #lam = np.minimum(np.random.beta(1.0, 1.0), 0.25)
+            lam = np.random.beta(1.0, 1.0)/4 + 0.75
+            x = lam * x + (1 - lam) * x2
+            #y = lam * y + (1 - lam) * y2
         
-        
+        y_bound = y - erosion(y, torch.ones(5, 5).type_as(y))
         y_hat = self.model(x)
-        loss = self.diceloss(y_hat, y) + self.bceloss(y_hat, y)
+        loss = self.diceloss(y_hat[:,0,:,:], y) + self.bceloss(y_hat[:,0,:,:], y)
+        loss_bound = self.diceloss(y_hat[:,1,:,:], y_bound) + self.bceloss(y_hat[:,1,:,:], y_bound)
         #loss = self.bceloss(y_hat, y)
         
         self.log('train_loss', loss, on_epoch=True)
-        return loss
+        self.log('train_loss_bound', loss_bound, on_epoch=True)
+        return loss + loss_bound
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
+        
+        y_bound = y - erosion(y, torch.ones(5, 5).type_as(y))
         y_hat = self.model(x)
         #loss = self.diceloss(y_hat, y) + self.bceloss(y_hat, y)
-        loss = self.bceloss(y_hat, y)
-        dice = 1-self.dice((torch.sigmoid(y_hat)>0.5).float(), y)
+        loss = self.bceloss(y_hat[:,0,:,:], y)
+        dice = 1-self.dice((torch.sigmoid(y_hat[:,0,:,:])>0.5).float(), y)
+        dice_bound = 1-self.dice((torch.sigmoid(y_hat[:,1,:,:])>0.5).float(), y_bound)
         
         return {
             "val_loss": loss,
-            "val_dice": dice
+            "val_dice": dice,
+            "val_dice_bound": dice_bound
             }
     
     def validation_epoch_end(self, outputs):
         avg_val_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
         avg_val_dice = torch.stack([x["val_dice"] for x in outputs]).mean()
+        avg_val_dice_bound = torch.stack([x["val_dice_bound"] for x in outputs]).mean()
 
         self.log('val_loss', avg_val_loss)
         self.log('val_dice', avg_val_dice)
+        self.log('val_dice_bound', avg_val_dice_bound)
         
         
 ####################
