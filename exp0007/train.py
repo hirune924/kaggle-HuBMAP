@@ -254,8 +254,8 @@ class LitSystem(pl.LightningModule):
         
         y_bound = y - erosion(y, torch.ones(5, 5).type_as(y))
         y_hat = self.model(x)
-        loss = self.diceloss(y_hat[:,0,:,:], y) + self.bceloss(y_hat[:,0,:,:], y)
-        loss_bound = self.diceloss(y_hat[:,1,:,:], y_bound) + self.bceloss(y_hat[:,1,:,:], y_bound)
+        loss = self.diceloss(y_hat[:,0,:,:].squeeze(dim=1), y) + self.bceloss(y_hat[:,0,:,:].squeeze(dim=1), y)
+        loss_bound = self.diceloss(y_hat[:,1,:,:].squeeze(dim=1), y_bound) + self.bceloss(y_hat[:,1,:,:].squeeze(dim=1), y_bound)
         #loss = self.bceloss(y_hat, y)
         
         self.log('train_loss', loss, on_epoch=True)
@@ -268,9 +268,9 @@ class LitSystem(pl.LightningModule):
         y_bound = y - erosion(y, torch.ones(5, 5).type_as(y))
         y_hat = self.model(x)
         #loss = self.diceloss(y_hat, y) + self.bceloss(y_hat, y)
-        loss = self.bceloss(y_hat[:,0,:,:], y)
-        dice = 1-self.dice((torch.sigmoid(y_hat[:,0,:,:])>0.5).float(), y)
-        dice_bound = 1-self.dice((torch.sigmoid(y_hat[:,1,:,:])>0.5).float(), y_bound)
+        loss = self.bceloss(y_hat[:,0,:,:].squeeze(dim=1), y)
+        dice = 1-self.dice((torch.sigmoid(y_hat[:,0,:,:].squeeze(dim=1))>0.5).float(), y)
+        dice_bound = 1-self.dice((torch.sigmoid(y_hat[:,1,:,:].squeeze(dim=1))>0.5).float(), y_bound)
         
         return {
             "val_loss": loss,
