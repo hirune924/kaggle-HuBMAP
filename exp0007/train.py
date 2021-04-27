@@ -229,7 +229,7 @@ class LitSystem(pl.LightningModule):
 
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.hparams.lr)
 
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.hparams.epoch)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.hparams.epoch, eta_min=self.hparams.lr*0.1)
         
         return [optimizer], [scheduler]
 
@@ -238,7 +238,7 @@ class LitSystem(pl.LightningModule):
         x2, y2 = batch[1]
         #x, y = torch.cat([x1, x2], dim=0), torch.cat([y1, y2], dim=0) 
         
-        if (self.hparams.epoch - self.current_epoch) > 5:
+        if (self.hparams.epoch - self.current_epoch) > 10:
             # cutmix
             lam = np.random.beta(0.5, 0.5)
             rand_index = torch.randperm(x.size()[0]).type_as(x).long()
