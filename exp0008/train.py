@@ -62,7 +62,7 @@ conf_dict = {'batch_size': 8,#32,
              'image_size': 128,#640,
              'image_scale': 2,
              'encoder_name': 'timm-efficientnet-b0',
-             'lr': 0.001,
+             'lr': 0.1,
              'fold': 0,
              'csv_path': '../input/extract-test/train.csv',
              'data_dir': '../input/extract-test/size_2048',
@@ -212,7 +212,7 @@ class LitSystem(pl.LightningModule):
         super().__init__()
         #self.conf = conf
         self.save_hyperparameters(conf)
-        self.model = smp.Unet(encoder_name=conf.encoder_name, in_channels=3, classes=1, drop_path_rate=0.2)
+        self.model = smp.Unet(encoder_name=conf.encoder_name, in_channels=3, classes=1)
         self.bceloss = torch.nn.BCEWithLogitsLoss()
         self.diceloss = DiceLoss()
         #self.diceloss = smp.utils.losses.DiceLoss(activation='sigmoid')
@@ -225,7 +225,7 @@ class LitSystem(pl.LightningModule):
 
     def configure_optimizers(self):
 
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.hparams.lr)
+        optimizer = torch.optim.SGD(self.model.parameters(), lr=self.hparams.lr)
 
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.hparams.epoch)
         
