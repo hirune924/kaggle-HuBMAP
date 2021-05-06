@@ -2,6 +2,7 @@ from sklearn.model_selection import StratifiedKFold, KFold
 import os
 import sys
 
+from omegaconf import OmegaConf
 import numpy as np
 import pandas as pd
 import cv2
