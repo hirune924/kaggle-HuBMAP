@@ -262,8 +262,8 @@ class LitSystem(pl.LightningModule):
         #loss = self.diceloss(y_hat[:,0,:,:].unsqueeze(dim=1), y) + self.bceloss(y_hat[:,0,:,:].unsqueeze(dim=1), y)
         #loss_bound = self.diceloss(y_hat[:,1,:,:].unsqueeze(dim=1), y_bound) + self.bceloss(y_hat[:,1,:,:].unsqueeze(dim=1), y_bound)
         
-        loss = self.dice(y_hat[:,0,:,:].unsqueeze(dim=1), y) + self.bceloss(y_hat[:,0,:,:].unsqueeze(dim=1), y) + self.focalloss(y_hat[:,0,:,:].unsqueeze(dim=1), y)
-        loss_bound = self.dice(y_hat[:,1,:,:].unsqueeze(dim=1), y_bound) + self.bceloss(y_hat[:,1,:,:].unsqueeze(dim=1), y_bound) + self.focalloss(y_hat[:,1,:,:].unsqueeze(dim=1), y_bound)
+        loss = self.dice(y_hat[:,0,:,:].unsqueeze(dim=1), y) + self.bceloss(y_hat[:,0,:,:].unsqueeze(dim=1), y) + self.focalloss(y_hat[:,0,:,:].unsqueeze(dim=1).contiguous(), y)
+        loss_bound = self.dice(y_hat[:,1,:,:].unsqueeze(dim=1), y_bound) + self.bceloss(y_hat[:,1,:,:].unsqueeze(dim=1), y_bound) + self.focalloss(y_hat[:,1,:,:].unsqueeze(dim=1).contiguous(), y_bound)
         #loss = self.bceloss(y_hat, y)
         
         self.log('train_loss', loss, on_epoch=True)
